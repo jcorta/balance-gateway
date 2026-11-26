@@ -4,7 +4,7 @@ Status: Accepted
 
 ## Context
 
-`balance-api` makes one synchronous HTTP call per request to the core. It runs on the servlet stack with virtual threads, so blocking I/O is cheap. Spring offers three clients: `RestTemplate`, which is in maintenance mode; `WebClient`, which is reactive and pulls in Project Reactor; and `RestClient`, a synchronous client with a fluent API, introduced in Spring Framework 6.1. Whichever is used needs explicit connect and read timeouts, because the defaults are infinite or OS-dependent.
+`balance-api` makes one synchronous HTTP call per request to the core. It runs on the servlet stack with virtual threads, so blocking I/O is cheap. Spring offers three clients: `RestTemplate`, which is in maintenance mode; `WebClient`, which is reactive and pulls in Project Reactor; and `RestClient`, a synchronous client with a fluent API, introduced in Spring Framework 6.1 and the recommended client in Spring Framework 7. Whichever is used needs explicit connect and read timeouts, because the defaults are infinite or OS-dependent.
 
 ## Decision
 

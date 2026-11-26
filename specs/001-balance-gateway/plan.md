@@ -15,20 +15,27 @@ Three Spring Boot services in one Maven multi-module build, started with Docker 
 | Concern | Choice | Version |
 |---|---|---|
 | Language | Java | 21 |
-| Framework | Spring Boot | 3.5.16 |
-| Authorisation server | Spring Authorization Server (via `spring-boot-starter-oauth2-authorization-server`) | 1.5.x, managed by Boot |
-| Resource server | Spring Security (`spring-boot-starter-oauth2-resource-server`) | 6.5.x, managed by Boot |
-| HTTP client | `RestClient` (Spring Framework) on the JDK `HttpClient` | 6.2.x, managed by Boot |
-| Resilience | Resilience4j (`resilience4j-spring-boot3`) | 2.4.0 |
+| Framework | Spring Boot | 4.2.0 |
+| Authorisation server | Spring Authorization Server (via `spring-boot-starter-security-oauth2-authorization-server`) | managed by Boot |
+| Resource server | Spring Security (`spring-boot-starter-security-oauth2-resource-server`) | 7.2.x, managed by Boot |
+| HTTP client | `RestClient` (Spring Framework, `spring-boot-starter-restclient`) on the JDK `HttpClient` | 7.1.x, managed by Boot |
+| Resilience | Resilience4j (`resilience4j-spring-boot4`) | 2.4.0 |
 | Cache | Caffeine | managed by Boot |
-| API description | springdoc-openapi (`springdoc-openapi-starter-webmvc-ui`) | 2.10.1 |
+| API description | springdoc-openapi (`springdoc-openapi-starter-webmvc-ui`) | 3.2.1 |
 | Observability | Spring Boot Actuator, Micrometer, Boot structured logging (ECS JSON) | managed by Boot |
 | Tests | JUnit 5, Mockito, AssertJ, `spring-security-test`, WireMock (`wiremock-standalone`) | Boot-managed; WireMock 3.13.2 |
 | Build | Maven Wrapper, Surefire, Failsafe | Maven 3.9.16 |
 | Runtime | Docker Compose, `eclipse-temurin:21` Alpine images | |
 | CI | GitHub Actions | |
 
-Spring Boot 3.5 is the last 3.x line; 3.5.16 is its final open-source release. It is kept here because the spec targets the Boot 3 ecosystem (Resilience4j `spring-boot3` starter, springdoc 2.x) that most existing estates run. Migration to Boot 4.x is listed in the README's next steps.
+Spring Boot 4.2.0 (Spring Framework 7.1, Spring Security 7.2, Jackson 3) is the current stable line, released on 2026-11-19 and supported until the end of 2027. Java 21 is within its supported range (17 to 27). The libraries outside the Spring portfolio were checked against it: Resilience4j 2.4.0 ships a dedicated `resilience4j-spring-boot4` module (which registers the circuit breaker health indicator against Boot 4's relocated health API), and springdoc 3.2.1 is built on Boot 4.2.0.
+
+Differences from Boot 3 that shape the code:
+
+- Auto-configuration is split into small modules with matching starters. This plan uses the new names: `spring-boot-starter-webmvc`, `spring-boot-starter-restclient`, `spring-boot-starter-security-oauth2-resource-server`, `spring-boot-starter-security-oauth2-authorization-server`, and a `-test` starter per technology (`spring-boot-starter-webmvc-test`, `spring-boot-starter-security-test`).
+- Jackson 3 (`tools.jackson.*` packages) is the default JSON library. DTOs are records and need no Jackson annotations.
+- `@WebMvcTest` moved to `org.springframework.boot.webmvc.test.autoconfigure`; mocks in tests use `@MockitoBean` (`@MockBean` is gone).
+- The health contributor API moved to `org.springframework.boot.health.contributor`. Application code does not implement indicators, so only the Resilience4j module touches it.
 
 ## Modules
 
@@ -239,7 +246,7 @@ The deadline runs the retry chain on a virtual thread. The MDC does not cross th
 
 ## Observability
 
-- Health on 8081: `/actuator/health` shows the `circuitBreakers` component (state per breaker) with `allow-health-indicator-to-fail: false`, so an open circuit is reported but does not turn the service `DOWN`; the core being unavailable is not a reason to restart or de-route the gateway, which is still answering. Probes use `/actuator/health/liveness` and `/actuator/health/readiness`, which do not include the circuit breaker.
+- Health on 8081: `/actuator/health` shows the `circuitBreakers` component (state per breaker) with `register-health-indicator: true`, `allow-health-indicator-to-fail: false` and `management.endpoint.health.show-details: always` (needed for the component to appear in the composite endpoint; also available alone at `/actuator/health/circuitBreakers`), so an open circuit is reported but does not turn the service `DOWN`; the core being unavailable is not a reason to restart or de-route the gateway, which is still answering. Probes use `/actuator/health/liveness` and `/actuator/health/readiness`, which do not include the circuit breaker.
 - Actuator endpoints exposed: `health`, `info`, `metrics`, `circuitbreakers`, `circuitbreakerevents`, `retries`, `retryevents`.
 - Metrics: Resilience4j Micrometer metrics (`resilience4j.circuitbreaker.state`, `resilience4j.circuitbreaker.calls`, `resilience4j.retry.calls`), HTTP server and client metrics from Boot, and a counter `balance.fallback` tagged `outcome=stale|unavailable`.
 - Logs: Spring Boot structured logging, ECS format, in the `docker` profile; human-readable pattern with the correlation id in the `local` profile. MDC key `correlationId`. `ResilienceEventLogger` logs each retry (attempt number, wait, cause) and every circuit breaker state transition.

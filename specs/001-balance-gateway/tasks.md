@@ -13,7 +13,7 @@ Legend: **Covers** lists the acceptance criteria (spec IDs) or plan sections a t
 
 Commit: `build: scaffold multi-module build, compose and CI`
 
-- [ ] **T0.1** Parent `pom.xml` (parent `spring-boot-starter-parent` 3.5.16, Java 21, modules, pinned versions for Resilience4j, springdoc and WireMock, `-Xlint:all -Werror`, Surefire for `*Test`, Failsafe for `*IT` bound to `integration-test` and `verify`).
+- [ ] **T0.1** Parent `pom.xml` (parent `spring-boot-starter-parent` 4.2.0, Java 21, modules, pinned versions for Resilience4j, springdoc and WireMock, `-Xlint:all -Werror`, Surefire for `*Test`, Failsafe for `*IT` bound to `integration-test` and `verify`).
   Covers: NFR-4. Verify: `./mvnw -q validate`.
 - [ ] **T0.2** Maven Wrapper pinned to Maven 3.9.16 (`mvnw`, `mvnw.cmd`, `.mvn/wrapper/`), executable bit set in git.
   Covers: NFR-4. Verify: `./mvnw -v` prints 3.9.16.

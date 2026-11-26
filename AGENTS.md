@@ -11,9 +11,9 @@ Rules for anyone (person or agent) changing this repository. `CLAUDE.md` imports
 | Component | Version |
 |---|---|
 | Java | 21 (Eclipse Temurin) |
-| Spring Boot | 3.5.16 (manages Spring Framework 6.2, Spring Security 6.5, Spring Authorization Server 1.5) |
-| Resilience4j | 2.4.0 (`resilience4j-spring-boot3`) |
-| springdoc-openapi | 2.10.1 |
+| Spring Boot | 4.2.0 (manages Spring Framework 7.1, Spring Security 7.2, Spring Authorization Server, Jackson 3) |
+| Resilience4j | 2.4.0 (`resilience4j-spring-boot4`) |
+| springdoc-openapi | 3.2.1 |
 | Caffeine | managed by Spring Boot |
 | WireMock | 3.13.2 (`wiremock-standalone`, tests only) |
 | Maven | 3.9.16 through the Maven Wrapper |
@@ -45,7 +45,7 @@ On Windows use `mvnw.cmd` or run the commands from Git Bash.
 | Level | Naming | Plugin / phase | Scope |
 |---|---|---|---|
 | Unit | `*Test` | Surefire, `test` | No Spring context. Class under test instantiated directly, collaborators mocked with Mockito. |
-| Slice | `*Test` | Surefire, `test` | `@WebMvcTest` with `spring-security-test`. Web layer and security only; no auth server. |
+| Slice | `*Test` | Surefire, `test` | `@WebMvcTest` with `spring-security-test` (Boot 4 packages and `@MockitoBean`). Web layer and security only; no auth server. |
 | Integration | `*IT` | Failsafe, `integration-test` / `verify` | `@SpringBootTest` with WireMock standing in for the core, over real HTTP. |
 
 A task in `tasks.md` is not done, and nothing is committed, while `./mvnw verify` fails. For Claude Code, `.claude/settings.json` registers a `Stop` hook (`.claude/hooks/verify-on-stop.sh`) that runs `./mvnw -q verify` at the end of each turn and reports failures back to the agent.
