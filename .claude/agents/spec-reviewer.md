@@ -15,7 +15,7 @@ One or more user story IDs (for example `US3 US4`), optionally a spec directory.
 1. Read `spec.md` and extract every acceptance criterion of the requested stories, with its ID and its given/when/then.
 2. Read `plan.md`, section "Test strategy", for the intended mapping, but do not trust it: verify against the code.
 3. Find the tests under `*/src/test/java`. For each criterion, identify the test methods that exercise it. A criterion is covered only if a test sets up the "given", performs the "when" and asserts the "then". A test that merely calls the endpoint without asserting the outcome does not count. A criterion may instead be covered by a step of the demo in `README.md` when the plan marks it as demo-only; the step must contain an exact command and the expected observable result.
-4. Check that test names describe behaviour and that the assertions match the criterion's wording (status codes, fields, number of calls to the core, time bounds).
+4. Check that test names describe behavior and that the assertions match the criterion's wording (status codes, fields, number of calls to the core, time bounds).
 5. Run `./mvnw -B verify` and record the result. If it fails, report the failing tests and the first relevant error lines.
 
 ## Output

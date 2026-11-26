@@ -16,7 +16,7 @@ Three Spring Boot services in one Maven multi-module build, started with Docker 
 |---|---|---|
 | Language | Java | 21 |
 | Framework | Spring Boot | 4.2.0 |
-| Authorisation server | Spring Authorization Server (via `spring-boot-starter-security-oauth2-authorization-server`) | managed by Boot |
+| Authorization server | Spring Authorization Server (via `spring-boot-starter-security-oauth2-authorization-server`) | managed by Boot |
 | Resource server | Spring Security (`spring-boot-starter-security-oauth2-resource-server`) | 7.2.x, managed by Boot |
 | HTTP client | `RestClient` (Spring Framework, `spring-boot-starter-restclient`) on the JDK `HttpClient` | 7.1.x, managed by Boot |
 | Resilience | Resilience4j (`resilience4j-spring-boot4`) | 2.4.0 |
@@ -65,7 +65,7 @@ A single multi-module build was chosen over three independent projects: one wrap
 
 ### core-mock (port 8090)
 
-| Method and path | Behaviour |
+| Method and path | Behavior |
 |---|---|
 | `GET /core/accounts/{accountId}/balance` | `200 {accountId, balance, currency, asOf}` for `ACC-1001`..`ACC-1004`, `404` otherwise. `asOf` is the time of the read. |
 | `GET /admin/chaos` | Current chaos settings. |
@@ -79,13 +79,16 @@ Order of chaos effects on a balance request: `down` returns `503` immediately; o
 ```
 io.github.jcorta.balancegateway.api
 ├── BalanceApiApplication
-├── balance/        BalanceController, BalanceResponse, BalanceService, AccountBalance,
-│                   LastKnownBalanceCache, AccountNotFoundException, BalanceUnavailableException
+├── balance/        BalanceController, BalanceService, BalanceResponse, AccountBalance,
+│                   LastKnownBalanceCache, BalanceConfiguration, FallbackProperties,
+│                   AccountNotFoundException, BalanceUnavailableException
 ├── core/           CoreBalanceClient, ResilientCoreBalanceClient, CoreClientConfiguration,
-│                   CoreProperties, CoreUnavailableException, ResilienceEventLogger
+│                   CoreResilienceConfiguration, CoreProperties, CoreUnavailableException,
+│                   ResilienceEventLogger
 ├── security/       SecurityConfiguration, ProblemDetailsAuthenticationEntryPoint,
 │                   ProblemDetailsAccessDeniedHandler
-└── web/            ApiExceptionHandler, CorrelationIdFilter, OpenApiConfiguration
+└── web/            ApiExceptionHandler, Problems, ProblemResponseWriter, ApiProblem,
+                    CorrelationIdFilter, OpenApiConfiguration
 ```
 
 Request flow:
@@ -173,7 +176,7 @@ sequenceDiagram
 }
 ```
 
-`balance` is serialised from `BigDecimal`; `asOf` is the instant at which the core produced the balance, and is preserved when the balance is served stale.
+`balance` is serialized from `BigDecimal`; `asOf` is the instant at which the core produced the balance, and is preserved when the balance is served stale.
 
 | Status | When | Problem `type` |
 |---|---|---|
@@ -206,10 +209,10 @@ Assumptions, to be replaced by measured values in a real deployment: the IVR all
 
 | Setting | Value | Reason |
 |---|---|---|
-| `balance.core.connect-timeout` | 250 ms | Connection setup inside the data centre is fast; a slow connect means the core host is unhealthy. |
+| `balance.core.connect-timeout` | 250 ms | Connection setup inside the data center is fast; a slow connect means the core host is unhealthy. |
 | `balance.core.read-timeout` | 700 ms | About twice the healthy p99. Long enough not to cut healthy-but-slow answers, short enough to fit two attempts in the budget. |
 | `resilience4j.retry.instances.core.max-attempts` | 3 (1 call + 2 retries) | More attempts add load to a struggling core and cannot fit the budget anyway. |
-| `wait-duration`, exponential multiplier | 100 ms, ×2 (100 ms, 200 ms), randomised ±50 % | Backoff gives a transient fault time to clear; jitter stops synchronised retry waves from all channels. |
+| `wait-duration`, exponential multiplier | 100 ms, ×2 (100 ms, 200 ms), randomized ±50 % | Backoff gives a transient fault time to clear; jitter stops synchronized retry waves from all channels. |
 | `retry-exceptions` | `HttpServerErrorException` (5xx), `ResourceAccessException` (I/O, connect and read timeouts) | Faults that a repetition can plausibly fix. |
 | Not retried | `AccountNotFoundException`, `HttpClientErrorException` (4xx), `CallNotPermittedException` (circuit open), unreadable body | A repetition gives the same answer; retrying an open circuit defeats it. |
 | `resilience4j.circuitbreaker.instances.core` | count-based window of 10 calls, minimum 5 calls, failure rate threshold 50 % | Reacts within two or three failing requests (each makes up to 3 calls) without opening on a single blip. |
@@ -239,7 +242,7 @@ The deadline runs the retry chain on a virtual thread. The MDC does not cross th
 ## Security
 
 - `balance-api` is an OAuth 2.0 resource server. Configuration: `issuer-uri` (enables `iss` validation) and `jwk-set-uri` (keys fetched lazily on the first request and cached by Nimbus, so the API starts even if the auth server is down). See [ADR-0004](../../docs/adr/0004-client-credentials-and-scopes.md).
-- Authorisation rule: `GET /v1/accounts/**` requires `SCOPE_balance.read`. OpenAPI and Swagger UI are public; everything else on port 8080 is denied.
+- Authorization rule: `GET /v1/accounts/**` requires `SCOPE_balance.read`. OpenAPI and Swagger UI are public; everything else on port 8080 is denied.
 - Actuator lives on management port 8081, which is meant to be reachable only from inside the network (not published through the ingress in production). It is unauthenticated in this implementation. The same filter chain applies on both ports; Actuator endpoints are permitted through `EndpointRequest.toAnyEndpoint()`. Spring Security 7 adds a `resource_metadata` parameter to the `WWW-Authenticate` challenge (OAuth 2.0 Protected Resource Metadata).
 - 401 and 403 responses are written as Problem Details by a custom `AuthenticationEntryPoint` (which delegates to `BearerTokenAuthenticationEntryPoint` to keep `WWW-Authenticate`) and `AccessDeniedHandler`.
 - Stateless: no session, no CSRF (no cookies, bearer tokens only).
@@ -258,7 +261,11 @@ The deadline runs the retry chain on a virtual thread. The MDC does not cross th
 | `local` (default) | Running from the IDE or `./mvnw spring-boot:run` | `localhost` URLs, human-readable logs |
 | `docker` | Docker Compose | Service-name URLs, JSON logs |
 
-Integration tests use a test-only profile `it` (`src/test/resources/application-it.yml`: 300 ms read timeout, 10 ms retry wait, 1 s open state) and register the WireMock URL with `@DynamicPropertySource`, so the suite stays fast while exercising the same configuration keys.
+Integration tests use a test-only profile `it` (`src/test/resources/application-it.yml`: 300 ms read timeout, 10 ms retry wait, 2 s open state) and register the WireMock URL with `@DynamicPropertySource`, so the suite stays fast while exercising the same configuration keys.
+
+## Build configuration
+
+The parent POM compiles with `-Xlint:all -Werror`, runs `*Test` classes in Surefire and `*IT` classes in Failsafe, and starts test JVMs with Mockito as an explicit agent (`maven-dependency-plugin:properties` exposes the jar path), which avoids the dynamic attach warning of recent JDKs.
 
 ## Containers
 
@@ -277,11 +284,12 @@ Integration tests use a test-only profile `it` (`src/test/resources/application-
 | Unit | `CorrelationIdFilterTest` | Reuse valid id, replace missing or malformed id (US5-AC3, US5-AC4) |
 | Slice | `BalanceControllerTest` (`@WebMvcTest`, filters off) | 200, 400 (including the 34 and 35 character boundary), 404, 502, 503, 500 without internal details, stale response, Problem Details shape, `Cache-Control` (US1, US4, NFR-5) |
 | Slice | `BalanceSecurityTest` (`@WebMvcTest`, `spring-security-test`) | 401 without token, 401 on a token the decoder rejects, 403 without the scope or without any scope, 200 with the scope (alone or among others), every other path denied, Problem Details body and `WWW-Authenticate` (US2-AC1..AC3, NFR-5) |
-| Integration | `BalanceResilienceIT`, `BalanceDeadlineIT` | WireMock core over HTTP: OK, retry on 5xx, retry on timeout, no retry on 4xx, circuit opens on sustained 5xx and stops calling the core, recovery through half-open, stale fallback (also while the circuit is open), 503 without cache, deadline with a hanging core, correlation id forwarded (US1, US3, US4, US5-AC3) |
-| Integration | `JwtValidationIT` | Real tokens signed with a test RSA key, JWKS served by WireMock: expired, wrong issuer, unknown signing key, malformed → 401; valid → 200; missing scope → 403; unauthorised requests never reach the core; keys cached after the first fetch (US2-AC1..AC3) |
+| Integration | `BalanceResilienceIT`, `BalanceDeadlineIT` | WireMock core over HTTP: OK, retry on 5xx, retry on timeout, no retry on 4xx, circuit opens on sustained 5xx and stops calling the core, recovery through half-open, stale fallback (also while the circuit is open), 503 without cache, deadline with a hanging core (US1, US3, US4, NFR-1) |
+| Integration | `JwtValidationIT` | Real tokens signed with a test RSA key, JWKS served by WireMock: expired, wrong issuer, unknown signing key, malformed → 401; valid → 200; missing scope → 403; unauthorized requests never reach the core; keys cached after the first fetch (US2-AC1..AC3) |
 | Integration | `ObservabilityIT` | Management port: liveness `UP` and overall `UP` while the circuit is open, circuit breaker state and `CIRCUIT_OPEN` in health, circuit breaker and retry endpoints, Resilience4j and HTTP metrics, `balance.fallback` by outcome; OpenAPI document lists the operation, its security requirement, all eight responses, the client credentials scheme and the `ApiProblem` schema; documentation served without credentials (US5-AC1, US5-AC2, US7-AC1) |
 | Integration | `CorrelationIdIT` | Caller id echoed and forwarded to the core; id generated when absent; malformed id replaced and never forwarded; id in the body of 400, 401, 403, 404 and 503 responses; id in the log entries of retries and fallback, across the virtual-thread hop (US5-AC3, US5-AC4, NFR-5) |
 | Integration | `AuthServerIT` (auth-server) | `ivr-channel` gets an RS256 JWT with `balance.read` that verifies against the published JWKS, 5-minute lifetime, no scope unless requested; `reporting` cannot obtain `balance.read`; wrong secret and other grant types rejected (US2-AC4) |
+| Integration | `ApplicationContextIT` (each module) | The application starts with its default configuration |
 | Integration | `ResilienceConfigurationIT` | The values of `application.yml` without overrides match this plan: timeouts, retry policy, circuit breaker, fallback limits |
 | Slice | `CoreBalanceControllerTest`, `ChaosControllerTest` (core-mock) | Balance, 404, outage, error rate, latency, reset through the admin endpoint; the caller's correlation id appears in the log entry of the request and a malformed one does not (US6-AC1, US6-AC2, US5-AC3 core side) |
 | Unit | `CorrelationIdFilterTest` (core-mock) | Same id rules as the gateway's filter, kept as its own copy so that the modules share no code; testing both catches drift |
@@ -306,4 +314,4 @@ One WireMock server (dynamic port, started once per JVM) plays the core and the 
 
 - The fallback cache is per instance and empty after a restart; see ADR-0003.
 - Virtual threads on Java 21 are pinned to their carrier while inside `synchronized` blocks (fixed in Java 24, JEP 491). No such blocking path is known in this call chain; pinning can be observed with `-Djdk.tracePinnedThreads=full`.
-- When the deadline cancels the request, the cancelled attempt may already have reached the core. Harmless for a read; for writes, idempotency keys would be required (out of scope).
+- When the deadline cancels the request, the canceled attempt may already have reached the core. Harmless for a read; for writes, idempotency keys would be required (out of scope).

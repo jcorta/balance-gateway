@@ -71,7 +71,7 @@ Commit: `feat(balance-api): add deadline, retry, circuit breaker and stale fallb
   Covers: US3-AC1..AC5, ADR-0002. Verify: `ResilientCoreBalanceClientTest` (deadline on hanging core; open circuit not retried).
 - [x] **T3.3** `LastKnownBalanceCache` (Caffeine, `balance.fallback.max-age`, `max-entries`, injectable ticker) and fallback decision in `BalanceService`; `BalanceUnavailableException` mapped to `503`.
   Covers: US4-AC1..AC3, ADR-0003. Verify: `BalanceServiceTest`, `LastKnownBalanceCacheTest`.
-- [x] **T3.4** `BalanceResilienceIT` with WireMock: retry on 5xx then success, retry on read timeout then success, no retry on 404, circuit opens on sustained 5xx and stops calling the core, half-open recovery, stale fallback with original `asOf`, `503` without cache, response within the deadline when the core hangs.
+- [x] **T3.4** `BalanceResilienceIT` with WireMock: retry on 5xx then success, retry on read timeout then success, no retry on 404, circuit opens on sustained 5xx and stops calling the core, half-open recovery, stale fallback with original `asOf`, `503` without cache; `BalanceDeadlineIT`: response within the deadline when the core hangs.
   Covers: US3-AC1..AC5, US4-AC1..AC3, NFR-1. Verify: `./mvnw verify`.
 - [x] **T3.5** `ResilienceEventLogger` logging retries and circuit breaker state transitions.
   Covers: US5 (demo: retries visible in logs). Verify: log lines during the stage demo.
@@ -106,7 +106,7 @@ Commit: `feat(balance-api): add correlation id propagation, JSON logs and fallba
 - [x] **T5.1** `CorrelationIdFilter` (highest precedence): validate or generate, MDC, response header, MDC cleared after the request.
   Covers: US5-AC3, US5-AC4. Verify: `CorrelationIdFilterTest`.
 - [x] **T5.2** `RestClient` interceptor forwarding `X-Correlation-Id`; `correlationId` property on every Problem Details body, including 401 and 403.
-  Covers: US5-AC3, NFR-5. Verify: `BalanceResilienceIT` (WireMock receives the header); `BalanceControllerTest`.
+  Covers: US5-AC3, NFR-5. Verify: `CorrelationIdIT` (the core receives the header; error bodies carry the id, including 401 and 403).
 - [x] **T5.3** Structured logging (ECS) in the `docker` profile of `balance-api` and `core-mock`; local pattern includes the correlation id.
   Covers: US5-AC5. Verify: `docker compose logs` shows one JSON object per line with `correlationId`.
 - [x] **T5.4** `balance.fallback` counter tagged `outcome`.
@@ -119,12 +119,12 @@ Commit: `feat(balance-api): add correlation id propagation, JSON logs and fallba
 
 Commit: `docs: complete README with design decisions and live degradation demo`
 
-- [ ] **T6.1** Container healthchecks (auth-server on JWKS, the others on liveness); `depends_on` with `condition: service_healthy`; `SPRING_PROFILES_ACTIVE=docker`; secrets from `.env`.
+- [x] **T6.1** Container healthchecks (auth-server on JWKS, the others on liveness); `depends_on` with `condition: service_healthy`; `SPRING_PROFILES_ACTIVE=docker`; secrets from `.env`.
   Covers: US6-AC3, NFR-2. Verify: `docker compose up --build`; `docker compose ps` shows three healthy services.
-- [ ] **T6.2** README: what it is, Mermaid diagram, how to run, live degradation demo (token, balance, 403, chaos, retries in logs, open circuit in Actuator, stale fallback, recovery), how to run tests, limitations, next steps.
+- [x] **T6.2** README: what it is, Mermaid diagram, how to run, live degradation demo (token, balance, 403, chaos, retries in logs, open circuit in Actuator, stale fallback, recovery), how to run tests, limitations, next steps.
   The demo must show a token issued by the real auth-server being accepted by balance-api (US2-AC4 with US2-AC1). Limitations to state: client secrets are stored with `{noop}` in configuration, and the signing key is generated at startup so tokens do not survive an auth-server restart.
   Covers: SC-3, US5-AC3 (cross-service logs), US5-AC5 (JSON log lines through `docker compose logs`), US6-AC3. Verify: every command in the README executed against `docker compose up`.
-- [ ] **T6.3** README "Design decisions": why `RestClient`, what is retried and what is not, retry and circuit breaker order, why client credentials and scopes, why virtual threads for an I/O-bound service, when a stale fallback is acceptable, what would change in production at a bank. Links to ADRs.
+- [x] **T6.3** README "Design decisions": why `RestClient`, what is retried and what is not, retry and circuit breaker order, why client credentials and scopes, why virtual threads for an I/O-bound service, when a stale fallback is acceptable, what would change in production at a bank. Links to ADRs.
   Covers: plan "Decisions". Verify: links resolve; content consistent with ADRs.
-- [ ] **T6.4** Final review of the whole repository: consistency between spec, plan, code and README; English spelling and grammar; broken links; no warnings, dead code or loose `TODO`s.
+- [x] **T6.4** Final review of the whole repository: consistency between spec, plan, code and README; English spelling and grammar; broken links; no warnings, dead code or loose `TODO`s.
   Covers: SC-1, SC-2. Verify: `./mvnw verify`; `spec-reviewer` for all stories.

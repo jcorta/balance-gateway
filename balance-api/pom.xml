@@ -12,7 +12,7 @@
 
   <artifactId>balance-api</artifactId>
   <name>balance-api</name>
-  <description>Balance enquiry API for channels, resilient against core failures</description>
+  <description>Balance inquiry API for channels, resilient against core failures</description>
 
   <dependencies>
     <dependency>

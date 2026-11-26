@@ -4,7 +4,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
 /**
- * Failure behaviour applied to balance requests.
+ * Failure behavior applied to balance requests.
  *
  * @param latencyMs        milliseconds added to every request
  * @param errorRatePercent share of requests, from 0 to 100, that fail with HTTP 500

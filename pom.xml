@@ -16,7 +16,7 @@
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>balance-gateway</name>
-  <description>Resilient balance enquiry gateway between channels and a core banking system</description>
+  <description>Resilient balance inquiry gateway between channels and a core banking system</description>
 
   <modules>
     <module>auth-server</module>
@@ -27,6 +27,7 @@
   <properties>
     <java.version>21</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <argLine/>
     <resilience4j.version>2.4.0</resilience4j.version>
     <springdoc.version>3.2.1</springdoc.version>
     <wiremock.version>3.13.2</wiremock.version>
@@ -71,6 +72,9 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
+            <!-- Mockito as an explicit agent avoids the dynamic attach warning; -Xshare:off silences the
+                 class data sharing warning that any agent triggers. Same setting in Failsafe below. -->
+            <argLine>@{argLine} -Xshare:off -javaagent:${org.mockito:mockito-core:jar}</argLine>
             <includes>
               <include>**/*Test.java</include>
             </includes>
@@ -80,6 +84,7 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-failsafe-plugin</artifactId>
           <configuration>
+            <argLine>@{argLine} -Xshare:off -javaagent:${org.mockito:mockito-core:jar}</argLine>
             <includes>
               <include>**/*IT.java</include>
             </includes>
@@ -100,6 +105,18 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <!-- Exposes the Mockito jar path as a property so that it can be passed to the test JVM as an agent. -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>properties</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

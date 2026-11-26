@@ -48,6 +48,8 @@ On Windows use `mvnw.cmd` or run the commands from Git Bash.
 | Slice | `*Test` | Surefire, `test` | `@WebMvcTest` with `spring-security-test` (Boot 4 packages and `@MockitoBean`). Web layer and security only; no auth server. |
 | Integration | `*IT` | Failsafe, `integration-test` / `verify` | `@SpringBootTest` with WireMock standing in for the core, over real HTTP. |
 
+Test JVMs start Mockito as an explicit agent (`argLine` in the parent POM), so a clean build prints no warnings; keep it that way.
+
 A task in `tasks.md` is not done, and nothing is committed, while `./mvnw verify` fails. For Claude Code, `.claude/settings.json` registers a `Stop` hook (`.claude/hooks/verify-on-stop.sh`) that runs `./mvnw -q verify` at the end of each turn and reports failures back to the agent.
 
 ## Run
@@ -68,8 +70,8 @@ docker compose up --build
 - Errors to clients as RFC 9457 Problem Details (`ProblemDetail`). Never expose stack traces or internal exception messages.
 - Comments only to explain a design reason that the code cannot express. No commented-out code, no dead code, no loose `TODO`s (pending work goes to "Next steps" in the README), no `System.out`.
 - The build must compile without warnings.
-- Test names describe behaviour: `returnsStaleBalanceWhenCoreIsDown`, not `test1`.
-- Names are consistent across modules, packages, classes, endpoints and properties. Application properties use the `balance.*` prefix in `balance-api` and `core.*` in `core-mock`.
+- Test names describe behavior: `returnsStaleBalanceWhenCoreIsDown`, not `test1`.
+- Names are consistent across modules, packages, classes, endpoints and properties. Application properties of `balance-api` use the `balance.*` prefix.
 - No secrets in the repository. Client secrets come from environment variables; `.env.example` holds sample values.
 
 ## Commits and branches

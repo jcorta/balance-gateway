@@ -30,7 +30,7 @@ public class OpenApiConfiguration {
                 .info(new Info()
                         .title("Balance Gateway API")
                         .version("v1")
-                        .description("Balance enquiries for channel systems, resilient against core banking failures."))
+                        .description("Balance inquiries for channel systems, resilient against core banking failures."))
                 .components(new Components().addSecuritySchemes(SECURITY_SCHEME, clientCredentials));
     }
 }

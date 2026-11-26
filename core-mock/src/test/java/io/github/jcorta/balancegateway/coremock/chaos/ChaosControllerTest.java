@@ -83,7 +83,7 @@ class ChaosControllerTest {
     }
 
     @Test
-    void resetRestoresNormalBehaviour() throws Exception {
+    void resetRestoresNormalBehavior() throws Exception {
         chaos.update(new ChaosSettings(500, 100, true));
 
         mockMvc.perform(delete("/admin/chaos")).andExpect(status().isNoContent());

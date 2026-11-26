@@ -4,7 +4,7 @@ Status: Accepted
 
 ## Context
 
-Calls to the core are protected by three mechanisms: a retry for transient faults, a circuit breaker to stop calling a core that is failing, and a total deadline so the channel always gets an answer within its budget. The order in which they wrap the call changes behaviour:
+Calls to the core are protected by three mechanisms: a retry for transient faults, a circuit breaker to stop calling a core that is failing, and a total deadline so the channel always gets an answer within its budget. The order in which they wrap the call changes behavior:
 
 - Circuit breaker outside the retry: the breaker sees one outcome per logical request, after all retries. It opens later, and while it is closed every request still sends up to three calls to a core that is down.
 - Retry outside the circuit breaker: the breaker records every attempt and opens sooner. Once it is open, the next attempt fails with `CallNotPermittedException`, which ends the retry immediately.

@@ -15,7 +15,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 
-/** Resilience behaviour over real HTTP, with the settings of application.yml except for shorter waits. */
+/** Resilience behavior over real HTTP, with the settings of application.yml except for shorter waits. */
 class BalanceResilienceIT extends CoreBackedApiSupport {
 
     private static final String AS_OF = "2026-11-26T14:03:12.481Z";

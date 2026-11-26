@@ -9,7 +9,7 @@
 
 ## Context
 
-Customer-facing channels such as the IVR or the Contact Center chat need a customer's account balance while the customer is waiting on the line. The balance is owned by the core banking system, which is slow under load and fails intermittently. Channels cannot absorb that behaviour: an IVR call flow has a fixed time budget per step and must decide quickly whether to read out a balance, read out a qualified balance, or route the customer elsewhere.
+Customer-facing channels such as the IVR or the Contact Center chat need a customer's account balance while the customer is waiting on the line. The balance is owned by the core banking system, which is slow under load and fails intermittently. Channels cannot absorb that behavior: an IVR call flow has a fixed time budget per step and must decide quickly whether to read out a balance, read out a qualified balance, or route the customer elsewhere.
 
 The balance gateway sits between the channels and the core. Its job is to give channels a fast, predictable answer regardless of the core's state, and to make the security and resilience controls part of the architecture rather than of each channel's implementation.
 
@@ -17,8 +17,8 @@ The balance gateway sits between the channels and the core. Its job is to give c
 
 | Actor | Description |
 |---|---|
-| Channel system | An automated client (IVR, chat) acting on its own behalf, not on behalf of an end user. Authorised to read balances. |
-| Non-balance system | Another registered automated client (for example, reporting) that is not authorised to read balances. |
+| Channel system | An automated client (IVR, chat) acting on its own behalf, not on behalf of an end user. Authorized to read balances. |
+| Non-balance system | Another registered automated client (for example, reporting) that is not authorized to read balances. |
 | Core banking system | System of record for balances. Slow and unreliable. Trusted, internal. |
 | Operator | Person or tool that monitors the gateway and its dependency on the core. |
 | Identity provider | Issues short-lived credentials to registered systems. |
@@ -37,7 +37,7 @@ As a channel system, I want to retrieve the current balance of an account so tha
 | US1-AC2 | **Given** a channel with balance read permission, **when** it requests the balance of an account the core does not know, **then** it receives a "not found" error in the uniform error format, and the request is not repeated against the core. |
 | US1-AC3 | **Given** a channel with balance read permission, **when** it requests a balance with a malformed account identifier, **then** it receives a "bad request" error in the uniform error format and the core is not called. |
 
-### US2 (P1): Only authorised systems can read balances
+### US2 (P1): Only authorized systems can read balances
 
 As the bank, I want only registered systems holding the balance read permission to read balances so that a compromised or misconfigured client cannot access customer data.
 
@@ -76,7 +76,7 @@ As an operator, I want to see the health of the gateway, the state of its protec
 
 | ID | Acceptance criterion |
 |---|---|
-| US5-AC1 | **Given** the gateway is running, **when** an operator checks its health, **then** the gateway reports itself alive even while the core is unavailable, and separately reports the state of its protection against the core (calling normally, stopped, trialling). |
+| US5-AC1 | **Given** the gateway is running, **when** an operator checks its health, **then** the gateway reports itself alive even while the core is unavailable, and separately reports the state of its protection against the core (calling normally, stopped, probing). |
 | US5-AC2 | **Given** the gateway is running, **when** an operator reads its metrics, **then** they include repetitions to the core, the state of the protection against the core, and the number of degraded responses by outcome. |
 | US5-AC3 | **Given** a request carrying a correlation identifier, **when** the gateway handles it, **then** the same identifier is returned to the caller, forwarded to the core, and present in the log entries of both the gateway and the core for that request. |
 | US5-AC4 | **Given** a request without a correlation identifier, or with a malformed one, **when** the gateway handles it, **then** the gateway generates a new identifier and uses it as in US5-AC3. |
@@ -84,12 +84,12 @@ As an operator, I want to see the health of the gateway, the state of its protec
 
 ### US6 (P2): Degradation can be reproduced on demand
 
-As an operator or reviewer, I want to change the core simulator's behaviour at runtime so that I can demonstrate and verify the gateway's degradation without restarting anything.
+As an operator or reviewer, I want to change the core simulator's behavior at runtime so that I can demonstrate and verify the gateway's degradation without restarting anything.
 
 | ID | Acceptance criterion |
 |---|---|
 | US6-AC1 | **Given** the core simulator is running, **when** an operator sets an added latency, a share of failing requests, or a full outage, **then** subsequent core requests behave accordingly, without a restart. |
-| US6-AC2 | **Given** a modified simulator behaviour, **when** the operator resets it, **then** the simulator answers normally again. |
+| US6-AC2 | **Given** a modified simulator behavior, **when** the operator resets it, **then** the simulator answers normally again. |
 | US6-AC3 | **Given** a fresh checkout, **when** a reviewer starts the system with a single command, **then** all components start in dependency order and report themselves healthy. |
 
 ### US7 (P2): The API contract is discoverable
@@ -114,10 +114,10 @@ As a channel developer, I want a machine-readable description of the API and a b
 
 | ID | Requirement |
 |---|---|
-| NFR-1 Latency | Every response, successful or not, is produced within a total time budget that is configurable and defaults to 2 seconds. While the gateway is not calling the core, degraded responses take under 100 ms at the gateway. |
+| NFR-1 Latency | Every response, successful or not, is produced within a total time budget that is configurable and defaults to 2 seconds. While the circuit to the core is open, degraded responses are produced from local data without calling the core, and reach the caller in under 500 ms (asserted in an integration test). |
 | NFR-2 Security | Systems authenticate as themselves with short-lived signed credentials. Access follows least privilege through per-system permissions. Error responses never include stack traces or internal details. Secrets are supplied through the environment and never stored in the repository. Containers run as a non-root user. |
 | NFR-3 Operability | Health, metrics and logs are available without code changes. All timeouts, repetition limits, protection thresholds and the maximum age of a last known balance are configurable per environment. |
-| NFR-4 Reproducibility | The whole system starts with one command on a developer machine with Docker. The build runs all automated tests with one command and in continuous integration on every push and pull request. |
+| NFR-4 Reproducibility | The whole system starts with one command on a developer machine with Docker. The build runs all automated tests with one command and in continuous integration on every push and on every pull request to `main`. |
 | NFR-5 Uniform errors | All error responses use a single documented, standard format that includes a correlation identifier. |
 
 ## Out of scope
