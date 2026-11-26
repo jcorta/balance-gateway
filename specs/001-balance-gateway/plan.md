@@ -240,7 +240,7 @@ The deadline runs the retry chain on a virtual thread. The MDC does not cross th
 
 - `balance-api` is an OAuth 2.0 resource server. Configuration: `issuer-uri` (enables `iss` validation) and `jwk-set-uri` (keys fetched lazily on the first request and cached by Nimbus, so the API starts even if the auth server is down). See [ADR-0004](../../docs/adr/0004-client-credentials-and-scopes.md).
 - Authorisation rule: `GET /v1/accounts/**` requires `SCOPE_balance.read`. OpenAPI and Swagger UI are public; everything else on port 8080 is denied.
-- Actuator lives on management port 8081, which is meant to be reachable only from inside the network (not published through the ingress in production). It is unauthenticated in this implementation.
+- Actuator lives on management port 8081, which is meant to be reachable only from inside the network (not published through the ingress in production). It is unauthenticated in this implementation. The same filter chain applies on both ports; Actuator endpoints are permitted through `EndpointRequest.toAnyEndpoint()`. Spring Security 7 adds a `resource_metadata` parameter to the `WWW-Authenticate` challenge (OAuth 2.0 Protected Resource Metadata).
 - 401 and 403 responses are written as Problem Details by a custom `AuthenticationEntryPoint` (which delegates to `BearerTokenAuthenticationEntryPoint` to keep `WWW-Authenticate`) and `AccessDeniedHandler`.
 - Stateless: no session, no CSRF (no cookies, bearer tokens only).
 
@@ -275,15 +275,17 @@ Integration tests use a test-only profile `it` (`src/test/resources/application-
 | Unit | `LastKnownBalanceCacheTest` | Maximum age with a controllable ticker (US4-AC2) |
 | Unit | `ResilientCoreBalanceClientTest` | Real Resilience4j objects, mocked core client: deadline bounds a hanging core, open circuit is not retried (US3-AC3, US3-AC4) |
 | Unit | `CorrelationIdFilterTest` | Reuse valid id, replace missing or malformed id (US5-AC3, US5-AC4) |
-| Slice | `BalanceControllerTest` (`@WebMvcTest`) | 401 without token, 401 on invalid token, 403 without scope, 200 with scope, 400 malformed id, 404, 503, Problem Details shape, `Cache-Control`, correlation header (US1, US2-AC1..3, NFR-5) |
+| Slice | `BalanceControllerTest` (`@WebMvcTest`, filters off) | 200, 400 (including the 34 and 35 character boundary), 404, 502, 503, 500 without internal details, stale response, Problem Details shape, `Cache-Control` (US1, US4, NFR-5) |
+| Slice | `BalanceSecurityTest` (`@WebMvcTest`, `spring-security-test`) | 401 without token, 401 on a token the decoder rejects, 403 without the scope or without any scope, 200 with the scope (alone or among others), every other path denied, Problem Details body and `WWW-Authenticate` (US2-AC1..AC3, NFR-5) |
 | Integration | `BalanceResilienceIT`, `BalanceDeadlineIT` | WireMock core over HTTP: OK, retry on 5xx, retry on timeout, no retry on 4xx, circuit opens on sustained 5xx and stops calling the core, recovery through half-open, stale fallback (also while the circuit is open), 503 without cache, deadline with a hanging core, correlation id forwarded (US1, US3, US4, US5-AC3) |
-| Integration | `JwtValidationIT` | Real tokens signed with a test RSA key, JWKS served by WireMock: expired, wrong issuer, wrong signing key → 401; valid → 200 (US2-AC2) |
+| Integration | `JwtValidationIT` | Real tokens signed with a test RSA key, JWKS served by WireMock: expired, wrong issuer, unknown signing key, malformed → 401; valid → 200; missing scope → 403; unauthorised requests never reach the core; keys cached after the first fetch (US2-AC1..AC3) |
 | Integration | `ObservabilityIT` | Liveness `UP` while circuit open, circuit breaker state in health, metrics present, OpenAPI document content (US5-AC1, US5-AC2, US7-AC1) |
-| Integration | `AuthServerIT` (auth-server) | `ivr-channel` gets a JWT with `balance.read`; `reporting` cannot obtain `balance.read` (US2-AC4) |
+| Integration | `AuthServerIT` (auth-server) | `ivr-channel` gets an RS256 JWT with `balance.read` that verifies against the published JWKS, 5-minute lifetime, no scope unless requested; `reporting` cannot obtain `balance.read`; wrong secret and other grant types rejected (US2-AC4) |
+| Integration | `ResilienceConfigurationIT` | The values of `application.yml` without overrides match this plan: timeouts, retry policy, circuit breaker, fallback limits |
 | Slice | `CoreBalanceControllerTest`, `ChaosControllerTest` (core-mock) | Balance, 404, outage, error rate, reset (US6-AC1, US6-AC2) |
 | Demo | README "Reproduce degradation" | End to end in Compose, including core-side logs and recovery (US5-AC3, US5-AC5, US6-AC3, SC-3) |
 
-WireMock runs in-process through its JUnit 5 extension (`WireMockExtension`, dynamic port). The standalone artifact is used because it shades Jetty and does not conflict with Boot's dependency management.
+One WireMock server (dynamic port, started once per JVM) plays the core and the JWKS endpoint for all integration tests, so Spring contexts with the same configuration are reused. The standalone artifact is used because it shades Jetty and does not conflict with Boot's dependency management.
 
 ## Decisions
 

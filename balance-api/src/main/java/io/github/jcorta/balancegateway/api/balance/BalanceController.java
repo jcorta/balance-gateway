@@ -2,12 +2,15 @@ package io.github.jcorta.balancegateway.api.balance;
 
 import jakarta.validation.constraints.Pattern;
 
+import io.github.jcorta.balancegateway.api.web.OpenApiConfiguration;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
@@ -31,12 +34,17 @@ public class BalanceController {
     }
 
     @GetMapping("/{accountId}/balance")
+    @SecurityRequirement(name = OpenApiConfiguration.SECURITY_SCHEME, scopes = "balance.read")
     @Operation(summary = "Get the balance of an account",
             description = "Returns the balance reported by the core. When the core is unavailable, returns the last "
                     + "known balance with stale=true and its original asOf, if one is known.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Balance, current or stale"),
             @ApiResponse(responseCode = "400", description = "Malformed account identifier",
+                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "401", description = "Missing, expired or invalid access token",
+                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "403", description = "The access token does not carry the balance.read scope",
                     content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "404", description = "The core does not know the account",
                     content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class))),

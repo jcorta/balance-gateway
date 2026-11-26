@@ -3,6 +3,14 @@ spring:
     name: balance-api
   profiles:
     default: local
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Both set: iss is validated without a discovery request, and keys are fetched lazily on first use,
+          # so the service starts even when the authorization server is down.
+          issuer-uri: http://localhost:9000
+          jwk-set-uri: http://localhost:9000/oauth2/jwks
   threads:
     virtual:
       enabled: true
@@ -34,6 +42,8 @@ balance:
   fallback:
     max-age: 10m
     max-entries: 100000
+  openapi:
+    token-url: http://localhost:9000/oauth2/token
 
 resilience4j:
   retry:
@@ -74,6 +84,12 @@ spring:
   config:
     activate:
       on-profile: docker
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://auth-server:9000
+          jwk-set-uri: http://auth-server:9000/oauth2/jwks
 
 balance:
   core:

@@ -1,7 +1,5 @@
 package io.github.jcorta.balancegateway.api.web;
 
-import java.net.URI;
-
 import jakarta.servlet.http.HttpServletRequest;
 
 import io.github.jcorta.balancegateway.api.balance.AccountNotFoundException;
@@ -34,42 +32,34 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleHandlerMethodValidationException(HandlerMethodValidationException e,
             HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         String path = ((ServletWebRequest) request).getRequest().getRequestURI();
-        ProblemDetail problem = problem(path, HttpStatus.BAD_REQUEST, "invalid-request", "Invalid request",
+        ProblemDetail problem = Problems.create(path, HttpStatus.BAD_REQUEST, "invalid-request", "Invalid request",
                 "The request contains an invalid parameter.");
         return handleExceptionInternal(e, problem, headers, status, request);
     }
 
     @ExceptionHandler(AccountNotFoundException.class)
     ProblemDetail accountNotFound(HttpServletRequest request) {
-        return problem(request.getRequestURI(), HttpStatus.NOT_FOUND, "account-not-found", "Account not found",
+        return Problems.create(request.getRequestURI(), HttpStatus.NOT_FOUND, "account-not-found", "Account not found",
                 "The core banking system does not know this account.");
     }
 
     @ExceptionHandler(BalanceUnavailableException.class)
     ProblemDetail balanceUnavailable(HttpServletRequest request) {
-        return problem(request.getRequestURI(), HttpStatus.SERVICE_UNAVAILABLE, "balance-unavailable", "Balance unavailable",
+        return Problems.create(request.getRequestURI(), HttpStatus.SERVICE_UNAVAILABLE, "balance-unavailable", "Balance unavailable",
                 "The core banking system is unavailable and no recent balance is known for this account.");
     }
 
     @ExceptionHandler(HttpClientErrorException.class)
     ProblemDetail coreRejectedRequest(HttpClientErrorException e, HttpServletRequest request) {
         log.error("Core rejected the request with status {}", e.getStatusCode());
-        return problem(request.getRequestURI(), HttpStatus.BAD_GATEWAY, "core-rejected-request",
+        return Problems.create(request.getRequestURI(), HttpStatus.BAD_GATEWAY, "core-rejected-request",
                 "Core rejected the request", "The core banking system rejected the request.");
     }
 
     @ExceptionHandler(Exception.class)
     ProblemDetail unexpected(Exception e, HttpServletRequest request) {
         log.error("Unexpected error", e);
-        return problem(request.getRequestURI(), HttpStatus.INTERNAL_SERVER_ERROR, "internal-error", "Internal error",
+        return Problems.create(request.getRequestURI(), HttpStatus.INTERNAL_SERVER_ERROR, "internal-error", "Internal error",
                 "An unexpected error occurred.");
-    }
-
-    private static ProblemDetail problem(String path, HttpStatus status, String slug, String title, String detail) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
-        problem.setType(URI.create("urn:balance-gateway:problem:" + slug));
-        problem.setTitle(title);
-        problem.setInstance(URI.create(path));
-        return problem;
     }
 }

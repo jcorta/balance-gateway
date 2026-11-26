@@ -1,5 +1,7 @@
 package io.github.jcorta.balancegateway.api.balance;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -15,6 +17,7 @@ import io.github.jcorta.balancegateway.api.web.ApiExceptionHandler;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
@@ -24,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.HttpClientErrorException;
 
 @WebMvcTest(BalanceController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import(ApiExceptionHandler.class)
 class BalanceControllerTest {
 
@@ -141,7 +145,7 @@ class BalanceControllerTest {
         mockMvc.perform(get("/v1/accounts/ACC-1001/balance"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.detail").value("An unexpected error occurred."))
-                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("secret"))))
-                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("IllegalState"))));
+                .andExpect(content().string(not(containsString("secret"))))
+                .andExpect(content().string(not(containsString("IllegalState"))));
     }
 }

@@ -34,7 +34,7 @@ class BalanceDeadlineIT extends CoreBackedApiSupport {
     void servesTheLastKnownBalanceWithinTheDeadlineWhenTheCoreHangs() {
         core.stubFor(balanceRequest("ACC-HANG-STALE").willReturn(balanceBody("ACC-HANG-STALE", "2.00", "2026-11-26T14:03:12Z")));
         requestBalance("ACC-HANG-STALE");
-        core.resetAll();
+        resetCoreStubs();
         core.stubFor(balanceRequest("ACC-HANG-STALE").willReturn(
                 balanceBody("ACC-HANG-STALE", "9.99", "2026-11-26T15:00:00Z").withFixedDelay(3_000)));
 

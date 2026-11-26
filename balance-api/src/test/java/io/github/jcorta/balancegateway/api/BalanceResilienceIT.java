@@ -115,7 +115,7 @@ class BalanceResilienceIT extends CoreBackedApiSupport {
         ResponseEntity<String> current = requestBalance("ACC-STALE");
         assertThat(current.getBody()).contains("\"stale\":false");
 
-        core.resetAll();
+        resetCoreStubs();
         core.stubFor(balanceRequest("ACC-STALE").willReturn(aResponse().withStatus(500)));
         ResponseEntity<String> stale = requestBalance("ACC-STALE");
 
@@ -144,7 +144,7 @@ class BalanceResilienceIT extends CoreBackedApiSupport {
     void servesStaleBalanceWithoutCallingTheCoreWhileTheCircuitIsOpen() {
         core.stubFor(balanceRequest("ACC-OPEN-STALE").willReturn(balanceBody("ACC-OPEN-STALE", "7.00", AS_OF)));
         requestBalance("ACC-OPEN-STALE");
-        core.resetAll();
+        resetCoreStubs();
         core.stubFor(balanceRequest("ACC-OPEN-STALE").willReturn(aResponse().withStatus(500)));
         requestBalance("ACC-OPEN-STALE");
         requestBalance("ACC-OPEN-STALE");
@@ -161,7 +161,7 @@ class BalanceResilienceIT extends CoreBackedApiSupport {
     void answersFromTheLastKnownBalanceQuicklyWhileTheCircuitIsOpen() {
         core.stubFor(balanceRequest("ACC-FAST").willReturn(balanceBody("ACC-FAST", "3.00", AS_OF)));
         requestBalance("ACC-FAST");
-        core.resetAll();
+        resetCoreStubs();
         core.stubFor(balanceRequest("ACC-FAST").willReturn(aResponse().withStatus(500)));
         requestBalance("ACC-FAST");
         requestBalance("ACC-FAST");
@@ -199,7 +199,7 @@ class BalanceResilienceIT extends CoreBackedApiSupport {
         requestBalance("ACC-RECOVER");
         assertThat(coreCircuitBreaker.getState()).isEqualTo(CircuitBreaker.State.OPEN);
 
-        core.resetAll();
+        resetCoreStubs();
         core.stubFor(balanceRequest("ACC-RECOVER").willReturn(balanceBody("ACC-RECOVER", "5.00", AS_OF)));
         await().atMost(Duration.ofSeconds(10))
                 .until(() -> coreCircuitBreaker.getState() == CircuitBreaker.State.HALF_OPEN);

@@ -84,20 +84,20 @@ Commit: `feat(balance-api): add deadline, retry, circuit breaker and stale fallb
 
 Commit: `feat: add authorization server and require balance.read scope`
 
-- [ ] **T4.1** auth-server: `spring.security.oauth2.authorizationserver` issuer and clients `ivr-channel` (`balance.read`) and `reporting` (`reporting.read`), `client_credentials` only, secrets from environment variables, 5-minute token TTL.
+- [x] **T4.1** auth-server: `spring.security.oauth2.authorizationserver` issuer and clients `ivr-channel` (`balance.read`) and `reporting` (`reporting.read`), `client_credentials` only, secrets from environment variables, 5-minute token TTL.
   Covers: US2-AC4, ADR-0004. Verify: `AuthServerIT`; `curl` to `/oauth2/token` and `/oauth2/jwks`.
-- [ ] **T4.2** balance-api: `issuer-uri` and `jwk-set-uri`; `SecurityConfiguration` (stateless, `SCOPE_balance.read` on `/v1/accounts/**`, OpenAPI public, everything else denied, Actuator permitted).
-  Covers: US2-AC1..AC3. Verify: `BalanceControllerTest`.
-- [ ] **T4.3** `ProblemDetailsAuthenticationEntryPoint` (keeps `WWW-Authenticate`) and `ProblemDetailsAccessDeniedHandler`.
-  Covers: US2-AC1, US2-AC3, NFR-5. Verify: `BalanceControllerTest` asserts problem bodies and header.
-- [ ] **T4.4** Slice tests with `spring-security-test` `jwt()`: no token 401, invalid token 401, without scope 403, with scope 200. Existing tests updated to send a token.
+- [x] **T4.2** balance-api: `issuer-uri` and `jwk-set-uri`; `SecurityConfiguration` (stateless, `SCOPE_balance.read` on `/v1/accounts/**`, OpenAPI public, everything else denied, Actuator permitted).
+  Covers: US2-AC1..AC3. Verify: `BalanceSecurityTest`, `JwtValidationIT`.
+- [x] **T4.3** `ProblemDetailsAuthenticationEntryPoint` (keeps `WWW-Authenticate`) and `ProblemDetailsAccessDeniedHandler`.
+  Covers: US2-AC1, US2-AC3, NFR-5. Verify: `BalanceSecurityTest` and `JwtValidationIT` assert problem bodies and the challenge header.
+- [x] **T4.4** Slice tests with `spring-security-test` `jwt()`: no token 401, invalid token 401, without scope 403, with scope 200. Existing tests updated to send a token.
   Covers: US2-AC1..AC3. Verify: `./mvnw test`.
-- [ ] **T4.5** `JwtValidationIT`: tokens signed with a test RSA key, JWKS served by WireMock; expired, wrong issuer and wrong key rejected with 401, valid token accepted.
+- [x] **T4.5** `JwtValidationIT`: tokens signed with a test RSA key, JWKS served by WireMock; expired, wrong issuer and wrong key rejected with 401, valid token accepted.
   Covers: US2-AC2. Verify: `./mvnw verify`.
-- [ ] **T4.6** OpenAPI security scheme (OAuth 2.0 client credentials) on the operation.
+- [x] **T4.6** OpenAPI security scheme (OAuth 2.0 client credentials) on the operation.
   Covers: US7-AC1. Verify: `curl /v3/api-docs`.
-- [ ] **T4.7** ADR-0004 checked against the implementation.
-- [ ] **T4.8** `spec-reviewer` for US2.
+- [x] **T4.7** ADR-0004 checked against the implementation.
+- [x] **T4.8** `spec-reviewer` for US2.
 
 ## Stage 5: Correlation id, structured logs, metrics
 
@@ -122,6 +122,7 @@ Commit: `docs: complete README with design decisions and live degradation demo`
 - [ ] **T6.1** Container healthchecks (auth-server on JWKS, the others on liveness); `depends_on` with `condition: service_healthy`; `SPRING_PROFILES_ACTIVE=docker`; secrets from `.env`.
   Covers: US6-AC3, NFR-2. Verify: `docker compose up --build`; `docker compose ps` shows three healthy services.
 - [ ] **T6.2** README: what it is, Mermaid diagram, how to run, live degradation demo (token, balance, 403, chaos, retries in logs, open circuit in Actuator, stale fallback, recovery), how to run tests, limitations, next steps.
+  The demo must show a token issued by the real auth-server being accepted by balance-api (US2-AC4 with US2-AC1). Limitations to state: client secrets are stored with `{noop}` in configuration, and the signing key is generated at startup so tokens do not survive an auth-server restart.
   Covers: SC-3, US5-AC3 (cross-service logs), US6-AC3. Verify: every command in the README executed against `docker compose up`.
 - [ ] **T6.3** README "Design decisions": why `RestClient`, what is retried and what is not, retry and circuit breaker order, why client credentials and scopes, why virtual threads for an I/O-bound service, when a stale fallback is acceptable, what would change in production at a bank. Links to ADRs.
   Covers: plan "Decisions". Verify: links resolve; content consistent with ADRs.
