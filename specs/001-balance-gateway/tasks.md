@@ -13,19 +13,19 @@ Legend: **Covers** lists the acceptance criteria (spec IDs) or plan sections a t
 
 Commit: `build: scaffold multi-module build, compose and CI`
 
-- [ ] **T0.1** Parent `pom.xml` (parent `spring-boot-starter-parent` 4.2.0, Java 21, modules, pinned versions for Resilience4j, springdoc and WireMock, `-Xlint:all -Werror`, Surefire for `*Test`, Failsafe for `*IT` bound to `integration-test` and `verify`).
+- [x] **T0.1** Parent `pom.xml` (parent `spring-boot-starter-parent` 4.2.0, Java 21, modules, pinned versions for Resilience4j, springdoc and WireMock, `-Xlint:all -Werror`, Surefire for `*Test`, Failsafe for `*IT` bound to `integration-test` and `verify`).
   Covers: NFR-4. Verify: `./mvnw -q validate`.
-- [ ] **T0.2** Maven Wrapper pinned to Maven 3.9.16 (`mvnw`, `mvnw.cmd`, `.mvn/wrapper/`), executable bit set in git.
+- [x] **T0.2** Maven Wrapper pinned to Maven 3.9.16 (`mvnw`, `mvnw.cmd`, `.mvn/wrapper/`), executable bit set in git.
   Covers: NFR-4. Verify: `./mvnw -v` prints 3.9.16.
-- [ ] **T0.3** Modules `auth-server`, `balance-api`, `core-mock`, each with its main class, `application.yml` with `local` and `docker` profiles and a port, and an application-context test.
+- [x] **T0.3** Modules `auth-server`, `balance-api`, `core-mock`, each with its main class, `application.yml` with `local` and `docker` profiles and a port, and an application-context test.
   Covers: plan "Modules". Verify: `./mvnw verify` runs one test per module.
-- [ ] **T0.4** One multi-stage `Dockerfile` per module (JDK Alpine build with BuildKit cache, JRE Alpine runtime, extracted layered jar, non-root user) and a `docker-compose.yml` with the three services.
-  Covers: NFR-2 (non-root), NFR-4. Verify: `docker compose build` succeeds; `docker compose up` starts three containers.
-- [ ] **T0.5** `.env.example`, `LICENSE` (MIT), README skeleton (purpose, CI badge, module table, links to spec, plan and ADRs).
+- [x] **T0.4** One multi-stage `Dockerfile` per module (JDK Alpine build with BuildKit cache, JRE Alpine runtime, extracted layered jar, non-root user) and a `docker-compose.yml` with the three services.
+  Covers: NFR-2 (non-root), NFR-4. Verify: `docker compose build` succeeds; `core-mock` and `balance-api` start healthy as non-root. The `auth-server` healthcheck (JWKS) passes from stage 4, when its clients are configured.
+- [x] **T0.5** `.env.example`, `LICENSE` (MIT), README skeleton (purpose, CI badge, module table, links to spec, plan and ADRs).
   Covers: NFR-2 (secrets), NFR-4. Verify: links resolve.
-- [ ] **T0.6** `.github/workflows/ci.yml`: `./mvnw -B verify` on every push and on pull requests to `main`, Temurin 21, Maven dependency cache.
+- [x] **T0.6** `.github/workflows/ci.yml`: `./mvnw -B verify` on every push and on pull requests to `main`, Temurin 21, Maven dependency cache.
   Covers: NFR-4, SC-2. Verify: workflow reviewed against the GitHub Actions documentation; it runs on the first push of the branch by the maintainer.
-- [ ] **T0.7** Spec status set to "Approved".
+- [x] **T0.7** Spec status set to "Approved".
   Verify: `spec.md` header.
 
 ## Stage 1: core-mock with chaos controls

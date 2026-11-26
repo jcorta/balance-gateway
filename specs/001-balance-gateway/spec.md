@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft |
+| Status | Approved |
 | Branch | `001-balance-gateway` |
 | Plan | [plan.md](plan.md) |
 | Tasks | [tasks.md](tasks.md) |
