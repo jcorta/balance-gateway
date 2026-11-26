@@ -111,6 +111,30 @@ class BalanceControllerTest {
     }
 
     @Test
+    void returnsServiceUnavailableProblemWhenNoBalanceIsKnown() throws Exception {
+        when(balances.balanceOf("ACC-1001")).thenThrow(new BalanceUnavailableException("ACC-1001"));
+
+        mockMvc.perform(get("/v1/accounts/ACC-1001/balance"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("urn:balance-gateway:problem:balance-unavailable"))
+                .andExpect(jsonPath("$.title").value("Balance unavailable"))
+                .andExpect(jsonPath("$.status").value(503))
+                .andExpect(jsonPath("$.instance").value("/v1/accounts/ACC-1001/balance"));
+    }
+
+    @Test
+    void returnsStaleBalanceWithItsOriginalAsOf() throws Exception {
+        when(balances.balanceOf("ACC-1001")).thenReturn(new BalanceResponse(
+                "ACC-1001", new BigDecimal("152300.75"), "ARS", Instant.parse("2026-11-26T13:00:00Z"), true));
+
+        mockMvc.perform(get("/v1/accounts/ACC-1001/balance"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.stale").value(true))
+                .andExpect(jsonPath("$.asOf").value("2026-11-26T13:00:00Z"));
+    }
+
+    @Test
     void hidesInternalDetailsOfUnexpectedErrors() throws Exception {
         when(balances.balanceOf("ACC-1001")).thenThrow(new IllegalStateException("secret internal detail"));
 

@@ -18,4 +18,8 @@ public record BalanceResponse(
     static BalanceResponse current(AccountBalance balance) {
         return new BalanceResponse(balance.accountId(), balance.balance(), balance.currency(), balance.asOf(), false);
     }
+
+    static BalanceResponse stale(AccountBalance balance) {
+        return new BalanceResponse(balance.accountId(), balance.balance(), balance.currency(), balance.asOf(), true);
+    }
 }

@@ -1,0 +1,13 @@
+balance:
+  core:
+    read-timeout: 300ms
+
+resilience4j:
+  retry:
+    instances:
+      core:
+        wait-duration: 10ms
+  circuitbreaker:
+    instances:
+      core:
+        wait-duration-in-open-state: 2s

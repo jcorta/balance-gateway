@@ -65,20 +65,20 @@ Commit: `feat(balance-api): add balance endpoint backed by the core client`
 
 Commit: `feat(balance-api): add deadline, retry, circuit breaker and stale fallback`
 
-- [ ] **T3.1** Resilience4j starter (no AOP: composition is programmatic); `resilience4j.retry`, `circuitbreaker` and `timelimiter` instances named `core` in `application.yml` with the plan's values.
+- [x] **T3.1** Resilience4j starter (no AOP: composition is programmatic); `resilience4j.retry`, `circuitbreaker` and `timelimiter` instances named `core` in `application.yml` with the plan's values.
   Covers: NFR-3, plan "Resilience configuration". Verify: `/actuator/circuitbreakers` lists `core` (after T3.6).
-- [ ] **T3.2** `ResilientCoreBalanceClient` composing `TimeLimiter(Retry(CircuitBreaker(call)))` on a virtual-thread executor, copying the MDC, translating failures into `CoreUnavailableException`.
+- [x] **T3.2** `ResilientCoreBalanceClient` composing `TimeLimiter(Retry(CircuitBreaker(call)))` on a virtual-thread executor, copying the MDC, translating failures into `CoreUnavailableException`.
   Covers: US3-AC1..AC5, ADR-0002. Verify: `ResilientCoreBalanceClientTest` (deadline on hanging core; open circuit not retried).
-- [ ] **T3.3** `LastKnownBalanceCache` (Caffeine, `balance.fallback.max-age`, `max-entries`, injectable ticker) and fallback decision in `BalanceService`; `BalanceUnavailableException` mapped to `503`.
+- [x] **T3.3** `LastKnownBalanceCache` (Caffeine, `balance.fallback.max-age`, `max-entries`, injectable ticker) and fallback decision in `BalanceService`; `BalanceUnavailableException` mapped to `503`.
   Covers: US4-AC1..AC3, ADR-0003. Verify: `BalanceServiceTest`, `LastKnownBalanceCacheTest`.
-- [ ] **T3.4** `BalanceResilienceIT` with WireMock: retry on 5xx then success, retry on read timeout then success, no retry on 404, circuit opens on sustained 5xx and stops calling the core, half-open recovery, stale fallback with original `asOf`, `503` without cache, response within the deadline when the core hangs.
+- [x] **T3.4** `BalanceResilienceIT` with WireMock: retry on 5xx then success, retry on read timeout then success, no retry on 404, circuit opens on sustained 5xx and stops calling the core, half-open recovery, stale fallback with original `asOf`, `503` without cache, response within the deadline when the core hangs.
   Covers: US3-AC1..AC5, US4-AC1..AC3, NFR-1. Verify: `./mvnw verify`.
-- [ ] **T3.5** `ResilienceEventLogger` logging retries and circuit breaker state transitions.
+- [x] **T3.5** `ResilienceEventLogger` logging retries and circuit breaker state transitions.
   Covers: US5 (demo: retries visible in logs). Verify: log lines during the stage demo.
-- [ ] **T3.6** Expose `circuitbreakers`, `circuitbreakerevents`, `retries`, `retryevents`; circuit breaker health indicator registered with `allow-health-indicator-to-fail: false`.
+- [x] **T3.6** Expose `circuitbreakers`, `circuitbreakerevents`, `retries`, `retryevents`; circuit breaker health indicator registered with `allow-health-indicator-to-fail: false`.
   Covers: US5-AC1. Verify: `curl :8081/actuator/health` with the core down.
-- [ ] **T3.7** ADR-0002 and ADR-0003 checked against the implementation.
-- [ ] **T3.8** `spec-reviewer` for US3 and US4.
+- [x] **T3.7** ADR-0002 and ADR-0003 checked against the implementation.
+- [x] **T3.8** `spec-reviewer` for US3 and US4.
 
 ## Stage 4: auth-server and resource server
 

@@ -5,6 +5,7 @@ import java.net.URI;
 import jakarta.servlet.http.HttpServletRequest;
 
 import io.github.jcorta.balancegateway.api.balance.AccountNotFoundException;
+import io.github.jcorta.balancegateway.api.balance.BalanceUnavailableException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +43,12 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     ProblemDetail accountNotFound(HttpServletRequest request) {
         return problem(request.getRequestURI(), HttpStatus.NOT_FOUND, "account-not-found", "Account not found",
                 "The core banking system does not know this account.");
+    }
+
+    @ExceptionHandler(BalanceUnavailableException.class)
+    ProblemDetail balanceUnavailable(HttpServletRequest request) {
+        return problem(request.getRequestURI(), HttpStatus.SERVICE_UNAVAILABLE, "balance-unavailable", "Balance unavailable",
+                "The core banking system is unavailable and no recent balance is known for this account.");
     }
 
     @ExceptionHandler(HttpClientErrorException.class)

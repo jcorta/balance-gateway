@@ -246,7 +246,7 @@ The deadline runs the retry chain on a virtual thread. The MDC does not cross th
 
 ## Observability
 
-- Health on 8081: `/actuator/health` shows the `circuitBreakers` component (state per breaker) with `register-health-indicator: true`, `allow-health-indicator-to-fail: false` and `management.endpoint.health.show-details: always` (needed for the component to appear in the composite endpoint; also available alone at `/actuator/health/circuitBreakers`), so an open circuit is reported but does not turn the service `DOWN`; the core being unavailable is not a reason to restart or de-route the gateway, which is still answering. Probes use `/actuator/health/liveness` and `/actuator/health/readiness`, which do not include the circuit breaker.
+- Health on 8081: `/actuator/health` shows the `circuitBreakers` component (state per breaker) with `register-health-indicator: true`, `allow-health-indicator-to-fail: false` and `management.endpoint.health.show-details: always` (needed for the component to appear in the composite endpoint; also available alone at `/actuator/health/circuitBreakers`), so an open circuit is reported but does not turn the service `DOWN`; the core being unavailable is not a reason to restart or de-route the gateway, which is still answering. While the circuit is open the component reports `CIRCUIT_OPEN` (status `UNKNOWN`) and the overall status stays `UP`. Probes use `/actuator/health/liveness` and `/actuator/health/readiness`, which do not include the circuit breaker.
 - Actuator endpoints exposed: `health`, `info`, `metrics`, `circuitbreakers`, `circuitbreakerevents`, `retries`, `retryevents`.
 - Metrics: Resilience4j Micrometer metrics (`resilience4j.circuitbreaker.state`, `resilience4j.circuitbreaker.calls`, `resilience4j.retry.calls`), HTTP server and client metrics from Boot, and a counter `balance.fallback` tagged `outcome=stale|unavailable`.
 - Logs: Spring Boot structured logging, ECS format, in the `docker` profile; human-readable pattern with the correlation id in the `local` profile. MDC key `correlationId`. `ResilienceEventLogger` logs each retry (attempt number, wait, cause) and every circuit breaker state transition.
@@ -258,7 +258,7 @@ The deadline runs the retry chain on a virtual thread. The MDC does not cross th
 | `local` (default) | Running from the IDE or `./mvnw spring-boot:run` | `localhost` URLs, human-readable logs |
 | `docker` | Docker Compose | Service-name URLs, JSON logs |
 
-Integration tests run without an explicit profile and override URLs and resilience values through `@DynamicPropertySource` and test properties (shorter timeouts and open-state duration to keep the suite fast).
+Integration tests use a test-only profile `it` (`src/test/resources/application-it.yml`: 300 ms read timeout, 10 ms retry wait, 1 s open state) and register the WireMock URL with `@DynamicPropertySource`, so the suite stays fast while exercising the same configuration keys.
 
 ## Containers
 
@@ -276,7 +276,7 @@ Integration tests run without an explicit profile and override URLs and resilien
 | Unit | `ResilientCoreBalanceClientTest` | Real Resilience4j objects, mocked core client: deadline bounds a hanging core, open circuit is not retried (US3-AC3, US3-AC4) |
 | Unit | `CorrelationIdFilterTest` | Reuse valid id, replace missing or malformed id (US5-AC3, US5-AC4) |
 | Slice | `BalanceControllerTest` (`@WebMvcTest`) | 401 without token, 401 on invalid token, 403 without scope, 200 with scope, 400 malformed id, 404, 503, Problem Details shape, `Cache-Control`, correlation header (US1, US2-AC1..3, NFR-5) |
-| Integration | `BalanceResilienceIT` | WireMock core over HTTP: OK, retry on 5xx, retry on timeout, no retry on 404, circuit opens on sustained 5xx, half-open recovery, stale fallback, 503 without cache, deadline, correlation id forwarded (US1, US3, US4, US5-AC3) |
+| Integration | `BalanceResilienceIT`, `BalanceDeadlineIT` | WireMock core over HTTP: OK, retry on 5xx, retry on timeout, no retry on 4xx, circuit opens on sustained 5xx and stops calling the core, recovery through half-open, stale fallback (also while the circuit is open), 503 without cache, deadline with a hanging core, correlation id forwarded (US1, US3, US4, US5-AC3) |
 | Integration | `JwtValidationIT` | Real tokens signed with a test RSA key, JWKS served by WireMock: expired, wrong issuer, wrong signing key → 401; valid → 200 (US2-AC2) |
 | Integration | `ObservabilityIT` | Liveness `UP` while circuit open, circuit breaker state in health, metrics present, OpenAPI document content (US5-AC1, US5-AC2, US7-AC1) |
 | Integration | `AuthServerIT` (auth-server) | `ivr-channel` gets a JWT with `balance.read`; `reporting` cannot obtain `balance.read` (US2-AC4) |

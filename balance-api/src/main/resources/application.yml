@@ -16,17 +16,58 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,circuitbreakers,circuitbreakerevents,retries,retryevents
   endpoint:
     health:
       probes:
         enabled: true
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
 
 balance:
   core:
     base-url: http://localhost:8090
     connect-timeout: 250ms
     read-timeout: 700ms
+  fallback:
+    max-age: 10m
+    max-entries: 100000
+
+resilience4j:
+  retry:
+    instances:
+      core:
+        max-attempts: 3
+        wait-duration: 100ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        enable-randomized-wait: true
+        randomized-wait-factor: 0.5
+        retry-exceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - org.springframework.web.client.ResourceAccessException
+  circuitbreaker:
+    instances:
+      core:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 15s
+        permitted-number-of-calls-in-half-open-state: 2
+        automatic-transition-from-open-to-half-open-enabled: true
+        ignore-exceptions:
+          - io.github.jcorta.balancegateway.api.balance.AccountNotFoundException
+          - org.springframework.web.client.HttpClientErrorException
+        register-health-indicator: true
+        allow-health-indicator-to-fail: false
+  timelimiter:
+    instances:
+      core:
+        timeout-duration: 2s
+        cancel-running-future: true
 
 ---
 spring:
