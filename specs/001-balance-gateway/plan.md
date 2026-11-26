@@ -177,13 +177,13 @@ sequenceDiagram
 
 | Status | When | Problem `type` |
 |---|---|---|
-| `400` | Malformed account id | `about:blank` (Spring default) |
+| `400` | Malformed account id | `urn:balance-gateway:problem:invalid-request` |
 | `401` | Missing, expired, tampered or foreign token. `WWW-Authenticate: Bearer` is kept. | `urn:balance-gateway:problem:unauthenticated` |
 | `403` | Valid token without `balance.read` | `urn:balance-gateway:problem:forbidden` |
 | `404` | Core does not know the account | `urn:balance-gateway:problem:account-not-found` |
 | `502` | Core rejected the request with another `4xx` (contract error between gateway and core) | `urn:balance-gateway:problem:core-rejected-request` |
 | `503` | Core unavailable and no last known balance within the maximum age | `urn:balance-gateway:problem:balance-unavailable` |
-| `500` | Unexpected error | `about:blank` |
+| `500` | Unexpected error | `urn:balance-gateway:problem:internal-error` |
 
 Error body (`Content-Type: application/problem+json`):
 

@@ -46,20 +46,20 @@ Commit: `feat(core-mock): add core balance simulator with runtime chaos controls
 
 Commit: `feat(balance-api): add balance endpoint backed by the core client`
 
-- [ ] **T2.1** `CoreProperties` (`balance.core.base-url`, `connect-timeout`, `read-timeout`) and `CoreClientConfiguration` building a `RestClient` on the JDK `HttpClient` with those timeouts.
+- [x] **T2.1** `CoreProperties` (`balance.core.base-url`, `connect-timeout`, `read-timeout`) and `CoreClientConfiguration` building a `RestClient` on the JDK `HttpClient` with those timeouts.
   Covers: plan "Resilience configuration" (timeouts), ADR-0001. Verify: `BalanceResilienceIT` smoke test against WireMock.
-- [ ] **T2.2** `CoreBalanceClient`: GET the core balance, map `404` to `AccountNotFoundException`; records `AccountBalance` (domain) and `BalanceResponse` (API).
+- [x] **T2.2** `CoreBalanceClient`: GET the core balance, map `404` to `AccountNotFoundException`; records `AccountBalance` (domain) and `BalanceResponse` (API).
   Covers: US1-AC1, US1-AC2. Verify: `BalanceResilienceIT` (OK, 404).
-- [ ] **T2.3** `BalanceController` `GET /v1/accounts/{accountId}/balance` with account id validation and `Cache-Control: no-store`; `BalanceService` passing through to the client.
+- [x] **T2.3** `BalanceController` `GET /v1/accounts/{accountId}/balance` with account id validation and `Cache-Control: no-store`; `BalanceService` passing through to the client.
   Covers: US1-AC1, US1-AC3. Verify: `BalanceControllerTest` (200, 400).
-- [ ] **T2.4** `ApiExceptionHandler` (`@RestControllerAdvice` extending `ResponseEntityExceptionHandler`) producing Problem Details for 400, 404, 502 and 500; `spring.mvc.problemdetails.enabled`; no stack traces or exception messages in bodies.
+- [x] **T2.4** `ApiExceptionHandler` (`@RestControllerAdvice` extending `ResponseEntityExceptionHandler`) producing Problem Details for 400, 404, 502 and 500; `instance` set explicitly because Spring does not fill it for `@ExceptionHandler` results; no stack traces or exception messages in bodies.
   Covers: US1-AC2, US1-AC3, NFR-2, NFR-5. Verify: `BalanceControllerTest` asserts `application/problem+json` and fields.
-- [ ] **T2.5** springdoc with Swagger UI at `/swagger-ui.html`, OpenAPI at `/v3/api-docs`, error responses documented on the operation.
+- [x] **T2.5** springdoc with Swagger UI at `/swagger-ui.html`, OpenAPI at `/v3/api-docs`, error responses documented on the operation.
   Covers: US7-AC1. Verify: `curl /v3/api-docs`; `ObservabilityIT` added in stage 5.
-- [ ] **T2.6** Actuator on management port 8081 with `health`, `info`, `metrics`; liveness and readiness groups; virtual threads enabled.
+- [x] **T2.6** Actuator on management port 8081 with `health`, `info`, `metrics`; liveness and readiness groups; virtual threads enabled.
   Covers: plan "Observability", plan "balance-api". Verify: `curl :8081/actuator/health/liveness`.
-- [ ] **T2.7** ADR-0001 checked against the implementation.
-- [ ] **T2.8** `spec-reviewer` for US1 and US7.
+- [x] **T2.7** ADR-0001 checked against the implementation.
+- [x] **T2.8** `spec-reviewer` for US1 and US7.
 
 ## Stage 3: Resilience
 

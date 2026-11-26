@@ -21,3 +21,19 @@ management:
     health:
       probes:
         enabled: true
+
+balance:
+  core:
+    base-url: http://localhost:8090
+    connect-timeout: 250ms
+    read-timeout: 700ms
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+balance:
+  core:
+    base-url: http://core-mock:8090
