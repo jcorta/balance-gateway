@@ -69,7 +69,7 @@ A single multi-module build was chosen over three independent projects: one wrap
 |---|---|
 | `GET /core/accounts/{accountId}/balance` | `200 {accountId, balance, currency, asOf}` for `ACC-1001`..`ACC-1004`, `404` otherwise. `asOf` is the time of the read. |
 | `GET /admin/chaos` | Current chaos settings. |
-| `POST /admin/chaos` | `{latencyMs, errorRatePercent, down}`. Applies to subsequent balance requests. |
+| `POST /admin/chaos` | `{latencyMs (0..60000), errorRatePercent (0..100), down}`; omitted fields default to no chaos. Applies to subsequent balance requests. |
 | `DELETE /admin/chaos` | Resets to `{0, 0, false}`. |
 
 Order of chaos effects on a balance request: `down` returns `503` immediately; otherwise the latency is added, then the request fails with `500` with probability `errorRatePercent`. Logs the received `X-Correlation-Id` in its MDC so a request can be followed across both services.

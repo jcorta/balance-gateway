@@ -32,15 +32,15 @@ Commit: `build: scaffold multi-module build, compose and CI`
 
 Commit: `feat(core-mock): add core balance simulator with runtime chaos controls`
 
-- [ ] **T1.1** `GET /core/accounts/{accountId}/balance` with fixed data for `ACC-1001`..`ACC-1004` (`asOf` = time of read), `404` for unknown accounts.
+- [x] **T1.1** `GET /core/accounts/{accountId}/balance` with fixed data for `ACC-1001`..`ACC-1004` (`asOf` = time of read), `404` for unknown accounts.
   Covers: plan "core-mock". Verify: `CoreBalanceControllerTest`; `curl` against the running service.
-- [ ] **T1.2** `ChaosSettings` record held in an `AtomicReference`; `GET`, `POST` and `DELETE /admin/chaos` with validation (`latencyMs >= 0`, `0 <= errorRatePercent <= 100`).
+- [x] **T1.2** `ChaosSettings` record held in an `AtomicReference`; `GET`, `POST` and `DELETE /admin/chaos` with validation (`0 <= latencyMs <= 60000`, `0 <= errorRatePercent <= 100`; omitted fields default to no chaos).
   Covers: US6-AC1, US6-AC2. Verify: `ChaosControllerTest`.
-- [ ] **T1.3** Chaos applied to balance requests: outage returns `503`, then latency, then random `500` by error rate. Randomness injected so tests are deterministic.
+- [x] **T1.3** Chaos applied to balance requests: outage returns `503`, then latency, then random `500` by error rate. Randomness injected so tests are deterministic.
   Covers: US6-AC1. Verify: `CoreBalanceControllerTest` (outage, forced error, latency).
-- [ ] **T1.4** Log each balance request with the received `X-Correlation-Id` in the MDC; Actuator health exposed.
+- [x] **T1.4** Log each balance request with the received `X-Correlation-Id` in the MDC; Actuator health exposed.
   Covers: US5-AC3 (core side). Verify: log line seen in `curl` session.
-- [ ] **T1.5** `spec-reviewer` for US6.
+- [x] **T1.5** `spec-reviewer` for US6.
 
 ## Stage 2: balance-api without security
 

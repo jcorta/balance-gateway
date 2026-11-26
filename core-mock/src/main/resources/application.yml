@@ -3,6 +3,9 @@ spring:
     name: core-mock
   profiles:
     default: local
+  jackson:
+    deserialization:
+      fail-on-null-for-primitives: false
   threads:
     virtual:
       enabled: true
@@ -19,3 +22,7 @@ management:
     health:
       probes:
         enabled: true
+
+logging:
+  pattern:
+    level: "%5p [%X{correlationId:-}]"
