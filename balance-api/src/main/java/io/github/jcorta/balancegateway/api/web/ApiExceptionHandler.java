@@ -37,6 +37,16 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(e, problem, headers, status, request);
     }
 
+    @Override
+    protected ResponseEntity<Object> handleExceptionInternal(Exception e, Object body, HttpHeaders headers,
+            HttpStatusCode status, WebRequest request) {
+        ResponseEntity<Object> response = super.handleExceptionInternal(e, body, headers, status, request);
+        if (response != null && response.getBody() instanceof ProblemDetail problem) {
+            Problems.addCorrelationId(problem);
+        }
+        return response;
+    }
+
     @ExceptionHandler(AccountNotFoundException.class)
     ProblemDetail accountNotFound(HttpServletRequest request) {
         return Problems.create(request.getRequestURI(), HttpStatus.NOT_FOUND, "account-not-found", "Account not found",

@@ -198,7 +198,7 @@ Error body (`Content-Type: application/problem+json`):
 }
 ```
 
-Problem types are URNs because there is no published documentation site to resolve them against. `detail` never contains exception messages.
+Problem types are URNs because there is no published documentation site to resolve them against. `detail` never contains exception messages. Errors built by this service carry the `correlationId` property, including 401 and 403 (the correlation filter runs before the security filters); errors produced by Spring itself (for example `405`) keep `about:blank` as type and also receive the `correlationId`. The OpenAPI description documents the body with a documentation-only `ApiProblem` record.
 
 ## Resilience configuration
 
@@ -279,10 +279,12 @@ Integration tests use a test-only profile `it` (`src/test/resources/application-
 | Slice | `BalanceSecurityTest` (`@WebMvcTest`, `spring-security-test`) | 401 without token, 401 on a token the decoder rejects, 403 without the scope or without any scope, 200 with the scope (alone or among others), every other path denied, Problem Details body and `WWW-Authenticate` (US2-AC1..AC3, NFR-5) |
 | Integration | `BalanceResilienceIT`, `BalanceDeadlineIT` | WireMock core over HTTP: OK, retry on 5xx, retry on timeout, no retry on 4xx, circuit opens on sustained 5xx and stops calling the core, recovery through half-open, stale fallback (also while the circuit is open), 503 without cache, deadline with a hanging core, correlation id forwarded (US1, US3, US4, US5-AC3) |
 | Integration | `JwtValidationIT` | Real tokens signed with a test RSA key, JWKS served by WireMock: expired, wrong issuer, unknown signing key, malformed → 401; valid → 200; missing scope → 403; unauthorised requests never reach the core; keys cached after the first fetch (US2-AC1..AC3) |
-| Integration | `ObservabilityIT` | Liveness `UP` while circuit open, circuit breaker state in health, metrics present, OpenAPI document content (US5-AC1, US5-AC2, US7-AC1) |
+| Integration | `ObservabilityIT` | Management port: liveness `UP` and overall `UP` while the circuit is open, circuit breaker state and `CIRCUIT_OPEN` in health, circuit breaker and retry endpoints, Resilience4j and HTTP metrics, `balance.fallback` by outcome; OpenAPI document lists the operation, its security requirement, all eight responses, the client credentials scheme and the `ApiProblem` schema; documentation served without credentials (US5-AC1, US5-AC2, US7-AC1) |
+| Integration | `CorrelationIdIT` | Caller id echoed and forwarded to the core; id generated when absent; malformed id replaced and never forwarded; id in the body of 400, 401, 403, 404 and 503 responses; id in the log entries of retries and fallback, across the virtual-thread hop (US5-AC3, US5-AC4, NFR-5) |
 | Integration | `AuthServerIT` (auth-server) | `ivr-channel` gets an RS256 JWT with `balance.read` that verifies against the published JWKS, 5-minute lifetime, no scope unless requested; `reporting` cannot obtain `balance.read`; wrong secret and other grant types rejected (US2-AC4) |
 | Integration | `ResilienceConfigurationIT` | The values of `application.yml` without overrides match this plan: timeouts, retry policy, circuit breaker, fallback limits |
-| Slice | `CoreBalanceControllerTest`, `ChaosControllerTest` (core-mock) | Balance, 404, outage, error rate, reset (US6-AC1, US6-AC2) |
+| Slice | `CoreBalanceControllerTest`, `ChaosControllerTest` (core-mock) | Balance, 404, outage, error rate, latency, reset through the admin endpoint; the caller's correlation id appears in the log entry of the request and a malformed one does not (US6-AC1, US6-AC2, US5-AC3 core side) |
+| Unit | `CorrelationIdFilterTest` (core-mock) | Same id rules as the gateway's filter, kept as its own copy so that the modules share no code; testing both catches drift |
 | Demo | README "Reproduce degradation" | End to end in Compose, including core-side logs and recovery (US5-AC3, US5-AC5, US6-AC3, SC-3) |
 
 One WireMock server (dynamic port, started once per JVM) plays the core and the JWKS endpoint for all integration tests, so Spring contexts with the same configuration are reused. The standalone artifact is used because it shades Jetty and does not conflict with Boot's dependency management.

@@ -20,12 +20,16 @@ import io.github.jcorta.balancegateway.coremock.web.CorrelationIdFilter;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+@ExtendWith(OutputCaptureExtension.class)
 @WebMvcTest({CoreBalanceController.class, ChaosController.class})
 @Import({AccountRepository.class, ChaosService.class, CorrelationIdFilter.class})
 class CoreBalanceControllerTest {
@@ -121,6 +125,23 @@ class CoreBalanceControllerTest {
         mockMvc.perform(get("/core/accounts/ACC-1001/balance"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountId").value("ACC-1001"));
+    }
+
+    @Test
+    void writesTheCallersCorrelationIdInTheLogEntryOfTheRequest(CapturedOutput output) throws Exception {
+        mockMvc.perform(get("/core/accounts/ACC-1001/balance").header("X-Correlation-Id", "trace-4711"))
+                .andExpect(status().isOk());
+
+        assertThat(output.getAll().lines())
+                .anyMatch(line -> line.contains("Balance requested for account ACC-1001") && line.contains("[trace-4711]"));
+    }
+
+    @Test
+    void doesNotWriteAMalformedCorrelationIdToTheLogs(CapturedOutput output) throws Exception {
+        mockMvc.perform(get("/core/accounts/ACC-1001/balance").header("X-Correlation-Id", "bad id;<x>"))
+                .andExpect(status().isOk());
+
+        assertThat(output.getAll()).doesNotContain("bad id;<x>");
     }
 
     @Test

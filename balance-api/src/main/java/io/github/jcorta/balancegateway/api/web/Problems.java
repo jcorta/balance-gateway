@@ -2,6 +2,7 @@ package io.github.jcorta.balancegateway.api.web;
 
 import java.net.URI;
 
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 
@@ -18,6 +19,15 @@ public final class Problems {
         problem.setType(URI.create(TYPE_PREFIX + slug));
         problem.setTitle(title);
         problem.setInstance(URI.create(path));
+        addCorrelationId(problem);
         return problem;
+    }
+
+    /** Adds the id of the current request so that a reported error can be traced in the logs of every system. */
+    public static void addCorrelationId(ProblemDetail problem) {
+        String correlationId = MDC.get(CorrelationIdFilter.MDC_KEY);
+        if (correlationId != null) {
+            problem.setProperty("correlationId", correlationId);
+        }
     }
 }

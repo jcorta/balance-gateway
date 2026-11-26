@@ -56,11 +56,22 @@ abstract class CoreBackedApiSupport {
     @BeforeEach
     void createClientAndResetState() {
         resetCoreStubs();
-        coreCircuitBreaker.reset();
+        closeCircuit();
         api = RestClient.builder()
                 .baseUrl("http://localhost:" + port)
                 .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { })
                 .build();
+    }
+
+    /**
+     * Returns the circuit to CLOSED with empty counters. A real transition is needed first: reset() alone would leave
+     * the pending open-to-half-open timer of an earlier test running, and it could fire during a later test.
+     */
+    private void closeCircuit() {
+        if (coreCircuitBreaker.getState() != CircuitBreaker.State.CLOSED) {
+            coreCircuitBreaker.transitionToClosedState();
+        }
+        coreCircuitBreaker.reset();
     }
 
     /** Clears stubs and the request journal, keeping the JWKS available for token validation. */
@@ -77,14 +88,27 @@ abstract class CoreBackedApiSupport {
 
     /** Sends the request with the given bearer token, or without an Authorization header when it is null. */
     protected ResponseEntity<String> requestBalance(String accountId, String bearerToken) {
+        return requestBalance(accountId, bearerToken, null);
+    }
+
+    /** As above, and with an X-Correlation-Id header unless the correlation id is null. */
+    protected ResponseEntity<String> requestBalance(String accountId, String bearerToken, String correlationId) {
         return api.get().uri("/v1/accounts/{id}/balance", accountId)
                 .headers(headers -> {
                     if (bearerToken != null) {
                         headers.setBearerAuth(bearerToken);
                     }
+                    if (correlationId != null) {
+                        headers.set("X-Correlation-Id", correlationId);
+                    }
                 })
                 .retrieve()
                 .toEntity(String.class);
+    }
+
+    /** Requests any path of the API port without credentials. */
+    protected ResponseEntity<String> getFromApi(String path) {
+        return api.get().uri(path).retrieve().toEntity(String.class);
     }
 
     protected static MappingBuilder balanceRequest(String accountId) {

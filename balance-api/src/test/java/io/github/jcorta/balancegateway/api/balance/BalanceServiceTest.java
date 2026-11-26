@@ -14,6 +14,7 @@ import java.util.Optional;
 
 import io.github.jcorta.balancegateway.api.core.CoreUnavailableException;
 import io.github.jcorta.balancegateway.api.core.ResilientCoreBalanceClient;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,11 +37,13 @@ class BalanceServiceTest {
     @Mock
     private LastKnownBalanceCache lastKnown;
 
+    private SimpleMeterRegistry meters;
     private BalanceService service;
 
     @BeforeEach
     void createService() {
-        service = new BalanceService(core, lastKnown);
+        meters = new SimpleMeterRegistry();
+        service = new BalanceService(core, lastKnown, meters);
     }
 
     @Test
@@ -54,6 +57,7 @@ class BalanceServiceTest {
         assertThat(response.asOf()).isEqualTo(FRESH);
         verify(lastKnown).put(fromCore);
         verify(lastKnown, never()).find(any());
+        assertThat(fallbackCount("stale") + fallbackCount("unavailable")).isZero();
     }
 
     @Test
@@ -68,6 +72,8 @@ class BalanceServiceTest {
         assertThat(response.balance()).isEqualByComparingTo("152300.75");
         assertThat(response.accountId()).isEqualTo(ACCOUNT);
         assertThat(response.currency()).isEqualTo("ARS");
+        assertThat(fallbackCount("stale")).isEqualTo(1.0);
+        assertThat(fallbackCount("unavailable")).isZero();
     }
 
     @Test
@@ -76,6 +82,8 @@ class BalanceServiceTest {
         when(lastKnown.find(ACCOUNT)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.balanceOf(ACCOUNT)).isInstanceOf(BalanceUnavailableException.class);
+        assertThat(fallbackCount("unavailable")).isEqualTo(1.0);
+        assertThat(fallbackCount("stale")).isZero();
     }
 
     @Test
@@ -105,6 +113,11 @@ class BalanceServiceTest {
         assertThatThrownBy(() -> service.balanceOf(ACCOUNT)).isInstanceOf(HttpClientErrorException.class);
 
         verifyNoInteractions(lastKnown);
+    }
+
+    private double fallbackCount(String outcome) {
+        var counter = meters.find("balance.fallback").tag("outcome", outcome).counter();
+        return counter == null ? 0 : counter.count();
     }
 
     private static AccountBalance balance(Instant asOf) {

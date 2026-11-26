@@ -103,17 +103,17 @@ Commit: `feat: add authorization server and require balance.read scope`
 
 Commit: `feat(balance-api): add correlation id propagation, JSON logs and fallback metrics`
 
-- [ ] **T5.1** `CorrelationIdFilter` (highest precedence): validate or generate, MDC, response header, MDC cleared after the request.
+- [x] **T5.1** `CorrelationIdFilter` (highest precedence): validate or generate, MDC, response header, MDC cleared after the request.
   Covers: US5-AC3, US5-AC4. Verify: `CorrelationIdFilterTest`.
-- [ ] **T5.2** `RestClient` interceptor forwarding `X-Correlation-Id`; `correlationId` property on every Problem Details body, including 401 and 403.
+- [x] **T5.2** `RestClient` interceptor forwarding `X-Correlation-Id`; `correlationId` property on every Problem Details body, including 401 and 403.
   Covers: US5-AC3, NFR-5. Verify: `BalanceResilienceIT` (WireMock receives the header); `BalanceControllerTest`.
-- [ ] **T5.3** Structured logging (ECS) in the `docker` profile of `balance-api` and `core-mock`; local pattern includes the correlation id.
+- [x] **T5.3** Structured logging (ECS) in the `docker` profile of `balance-api` and `core-mock`; local pattern includes the correlation id.
   Covers: US5-AC5. Verify: `docker compose logs` shows one JSON object per line with `correlationId`.
-- [ ] **T5.4** `balance.fallback` counter tagged `outcome`.
+- [x] **T5.4** `balance.fallback` counter tagged `outcome`.
   Covers: US5-AC2. Verify: `ObservabilityIT`.
-- [ ] **T5.5** `ObservabilityIT`: liveness `UP` with the circuit open, circuit breaker state in health, Resilience4j and fallback metrics present, OpenAPI document contains the operation, security scheme and error responses.
+- [x] **T5.5** `ObservabilityIT`: liveness `UP` with the circuit open, circuit breaker state in health, Resilience4j and fallback metrics present, OpenAPI document contains the operation, security scheme and error responses.
   Covers: US5-AC1, US5-AC2, US7-AC1. Verify: `./mvnw verify`.
-- [ ] **T5.6** `spec-reviewer` for US5 and US7.
+- [x] **T5.6** `spec-reviewer` for US5 and US7.
 
 ## Stage 6: Docker and final README
 
@@ -123,7 +123,7 @@ Commit: `docs: complete README with design decisions and live degradation demo`
   Covers: US6-AC3, NFR-2. Verify: `docker compose up --build`; `docker compose ps` shows three healthy services.
 - [ ] **T6.2** README: what it is, Mermaid diagram, how to run, live degradation demo (token, balance, 403, chaos, retries in logs, open circuit in Actuator, stale fallback, recovery), how to run tests, limitations, next steps.
   The demo must show a token issued by the real auth-server being accepted by balance-api (US2-AC4 with US2-AC1). Limitations to state: client secrets are stored with `{noop}` in configuration, and the signing key is generated at startup so tokens do not survive an auth-server restart.
-  Covers: SC-3, US5-AC3 (cross-service logs), US6-AC3. Verify: every command in the README executed against `docker compose up`.
+  Covers: SC-3, US5-AC3 (cross-service logs), US5-AC5 (JSON log lines through `docker compose logs`), US6-AC3. Verify: every command in the README executed against `docker compose up`.
 - [ ] **T6.3** README "Design decisions": why `RestClient`, what is retried and what is not, retry and circuit breaker order, why client credentials and scopes, why virtual threads for an I/O-bound service, when a stale fallback is acceptable, what would change in production at a bank. Links to ADRs.
   Covers: plan "Decisions". Verify: links resolve; content consistent with ADRs.
 - [ ] **T6.4** Final review of the whole repository: consistency between spec, plan, code and README; English spelling and grammar; broken links; no warnings, dead code or loose `TODO`s.

@@ -1,9 +1,16 @@
 package io.github.jcorta.balancegateway.api.core;
 
+import java.io.IOException;
 import java.net.http.HttpClient;
 
+import io.github.jcorta.balancegateway.api.web.CorrelationIdFilter;
+
+import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpRequest;
+import org.springframework.http.client.ClientHttpRequestExecution;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
@@ -21,7 +28,17 @@ public class CoreClientConfiguration {
         requestFactory.setReadTimeout(properties.readTimeout());
         return builder
                 .baseUrl(properties.baseUrl())
+                .requestInterceptor(CoreClientConfiguration::forwardCorrelationId)
                 .requestFactory(requestFactory)
                 .build();
+    }
+
+    private static ClientHttpResponse forwardCorrelationId(HttpRequest request, byte[] body,
+            ClientHttpRequestExecution execution) throws IOException {
+        String correlationId = MDC.get(CorrelationIdFilter.MDC_KEY);
+        if (correlationId != null) {
+            request.getHeaders().set(CorrelationIdFilter.HEADER, correlationId);
+        }
+        return execution.execute(request, body);
     }
 }

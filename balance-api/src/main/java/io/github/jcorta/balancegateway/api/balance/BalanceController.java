@@ -2,6 +2,7 @@ package io.github.jcorta.balancegateway.api.balance;
 
 import jakarta.validation.constraints.Pattern;
 
+import io.github.jcorta.balancegateway.api.web.ApiProblem;
 import io.github.jcorta.balancegateway.api.web.OpenApiConfiguration;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,7 +15,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
-import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,19 +41,19 @@ public class BalanceController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Balance, current or stale"),
             @ApiResponse(responseCode = "400", description = "Malformed account identifier",
-                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ApiProblem.class))),
             @ApiResponse(responseCode = "401", description = "Missing, expired or invalid access token",
-                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ApiProblem.class))),
             @ApiResponse(responseCode = "403", description = "The access token does not carry the balance.read scope",
-                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ApiProblem.class))),
             @ApiResponse(responseCode = "404", description = "The core does not know the account",
-                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ApiProblem.class))),
             @ApiResponse(responseCode = "502", description = "The core rejected the request",
-                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ApiProblem.class))),
             @ApiResponse(responseCode = "503", description = "The core is unavailable and no recent balance is known",
-                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class))),
+                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ApiProblem.class))),
             @ApiResponse(responseCode = "500", description = "Unexpected error",
-                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ProblemDetail.class)))
+                    content = @Content(mediaType = PROBLEM_JSON, schema = @Schema(implementation = ApiProblem.class)))
     })
     public ResponseEntity<BalanceResponse> balance(
             @Parameter(description = "Account identifier", example = "ACC-1001")

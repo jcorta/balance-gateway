@@ -18,6 +18,10 @@ spring:
 server:
   port: 8080
 
+logging:
+  pattern:
+    level: "%5p [%X{correlationId:-}]"
+
 management:
   server:
     port: 8081
@@ -94,3 +98,8 @@ spring:
 balance:
   core:
     base-url: http://core-mock:8090
+
+logging:
+  structured:
+    format:
+      console: ecs

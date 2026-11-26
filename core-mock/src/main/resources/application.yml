@@ -26,3 +26,14 @@ management:
 logging:
   pattern:
     level: "%5p [%X{correlationId:-}]"
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+logging:
+  structured:
+    format:
+      console: ecs
