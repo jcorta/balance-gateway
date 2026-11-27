@@ -50,7 +50,7 @@ On Windows use `mvnw.cmd` or run the commands from Git Bash.
 
 Test JVMs start Mockito as an explicit agent (`argLine` in the parent POM), so a clean build prints no warnings; keep it that way.
 
-A task in `tasks.md` is not done, and nothing is committed, while `./mvnw verify` fails. For Claude Code, `.claude/settings.json` registers a `Stop` hook (`.claude/hooks/verify-on-stop.sh`) that runs `./mvnw -q verify` at the end of each turn and reports failures back to the agent.
+A task in `tasks.md` is not done, and nothing is committed, while `./mvnw verify` fails. For Claude Code, `.claude/settings.json` registers a `Stop` hook (`.claude/hooks/verify-on-stop.sh`) that runs `./mvnw -q verify` at the end of each turn with uncommitted changes and reports failures back to the agent. Turns that leave the working tree clean are skipped; committed work is covered by CI.
 
 ## Run
 
