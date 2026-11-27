@@ -1,0 +1,37 @@
+name: balance-gateway
+
+services:
+  auth-server:
+    build:
+      context: .
+      dockerfile: auth-server/Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      IVR_CLIENT_SECRET: ${IVR_CLIENT_SECRET:?copy .env.example to .env}
+      REPORTING_CLIENT_SECRET: ${REPORTING_CLIENT_SECRET:?copy .env.example to .env}
+    ports:
+      - "127.0.0.1:9000:9000"
+
+  core-mock:
+    build:
+      context: .
+      dockerfile: core-mock/Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "127.0.0.1:8090:8090"
+
+  balance-api:
+    build:
+      context: .
+      dockerfile: balance-api/Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      auth-server:
+        condition: service_healthy
+      core-mock:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8081:8081"

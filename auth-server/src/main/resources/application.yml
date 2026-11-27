@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: auth-server
+  profiles:
+    default: local
+  security:
+    oauth2:
+      authorizationserver:
+        # Fixed issuer: tokens requested from the host must carry the same iss as the one balance-api validates.
+        issuer: http://localhost:9000
+        client:
+          ivr-channel:
+            registration:
+              client-id: ivr-channel
+              client-secret: "{noop}${IVR_CLIENT_SECRET}"
+              client-authentication-methods: client_secret_basic
+              authorization-grant-types: client_credentials
+              scopes: balance.read
+            token:
+              access-token-time-to-live: 5m
+          reporting:
+            registration:
+              client-id: reporting
+              client-secret: "{noop}${REPORTING_CLIENT_SECRET}"
+              client-authentication-methods: client_secret_basic
+              authorization-grant-types: client_credentials
+              scopes: reporting.read
+            token:
+              access-token-time-to-live: 5m
+
+server:
+  port: 9000
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  security:
+    oauth2:
+      authorizationserver:
+        issuer: http://auth-server:9000
